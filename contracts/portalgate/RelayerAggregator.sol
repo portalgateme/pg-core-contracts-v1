@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./interfaces/ENSRegistry.sol";
-import "./interfaces/ENSResolver.sol";
-import "./interfaces/IRelayerRegistry.sol";
+import "../interfaces/ENSRegistry.sol";
+import "../interfaces/ENSResolver.sol";
+import "../interfaces/IRelayerRegistry.sol";
 
 struct Relayer {
     address owner;

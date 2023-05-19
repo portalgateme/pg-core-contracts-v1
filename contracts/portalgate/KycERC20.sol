@@ -77,27 +77,29 @@ contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
     }
 
     /**
-     * @notice Deposit underlying tokens and mint the same number of wrapped tokens.     
+     * @notice Deposit underlying tokens and mint the same number of wrapped tokens.
+     * @param trader Recipient of the wrapped tokens
      * @param amount Quantity of underlying tokens from _msgSender() to exchange for wrapped tokens (to account) at 1:1
      */
-    function depositFor(uint256 amount)
+    function depositFor(address trader, uint256 amount)
         public
         override(IKycERC20, ERC20Wrapper)
         returns (bool)
     {
-        return ERC20Wrapper.depositFor(msg.sender, amount);
+        return ERC20Wrapper.depositFor(trader, amount);
     }
 
     /**
-     * @notice Burn a number of wrapped tokens and withdraw the same number of underlying tokens.     
+     * @notice Burn a number of wrapped tokens and withdraw the same number of underlying tokens.
+     * @param trader Recipient of the underlying tokens
      * @param amount Quantity of wrapped tokens from _msgSender() to exchange for underlying tokens (to account) at 1:1
      */
-    function withdrawTo(uint256 amount)
+    function withdrawTo(address trader, uint256 amount)
         public
         override(IKycERC20, ERC20Wrapper)
         returns (bool)
     {
-        return ERC20Wrapper.withdrawTo(msg.sender, amount);
+        return ERC20Wrapper.withdrawTo(trader, amount);
     }
 
     /**
