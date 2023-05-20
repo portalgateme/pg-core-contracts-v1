@@ -1,26 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
-import "../libs/EnsResolve.sol";
 import "./RelayerRegistry.sol";
 import "../tornado-core/ERC20Tornado.sol";
 
-contract TornadoRouter is EnsResolve {
-    using SafeERC20 for IERC20;
-
-    event EncryptedNote(address indexed sender, bytes encryptedNote);
-        
+contract PGRouter {
     RelayerRegistry public relayerRegistry;
 
-    constructor(bytes32 _relayerRegistry) {        
-        relayerRegistry = RelayerRegistry(resolve(_relayerRegistry));        
+    constructor(address _relayerRegistry) {
+        relayerRegistry = RelayerRegistry(_relayerRegistry);
     }
 
     function withdraw(

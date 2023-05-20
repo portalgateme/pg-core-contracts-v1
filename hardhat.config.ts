@@ -25,11 +25,11 @@ function privateKey() {
 const SOL_COMPILER_VERSIONS = [
   "0.6.11",
   "0.6.12",
-  "0.7.6",  
+  "0.7.6",
   "0.8.6",
   "0.8.7",
   "0.8.14",
-  "0.8.19",  
+  "0.8.19",
 ];
 
 const config: HardhatUserConfig = {
@@ -54,11 +54,30 @@ const config: HardhatUserConfig = {
       accounts: privateKey(),
       gasMultiplier: 1.2,
       chainId: 5,
+      saveDeployments: true,
+      tags: ["stage"],
+      verify: {
+        etherscan: {
+          apiUrl: "https://api-goerli.etherscan.io/",
+        },
+      },
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: privateKey(),
       chainId: 1,
+      saveDeployments: true,
+      tags: ["stage"],
+      verify: {
+        etherscan: {
+          apiUrl: "https://api.etherscan.io/",
+        },
+      },
+    },
+  },
+  verify: {
+    etherscan: {
+      apiKey: process.env.ETHERSCAN_API_KEY,
     },
   },
   solidity: {
