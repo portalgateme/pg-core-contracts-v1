@@ -91,10 +91,13 @@ contract PGRouter {
             state != InstanceRegistry.InstanceState.WITHDRAW_DISABLED,
             "The instance is not allowed to withdraw"
         );
-        require(
-            relayerRegistry.isRelayerRegistered(msg.sender),
-            "Invalid Relayer"
-        );        
+
+        if (_relayer != _recipient) {
+            require(
+                relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender),
+                "Invalid Relayer"
+            ); 
+        }
 
         _tornado.withdraw{value: msg.value}(
             _proof,
