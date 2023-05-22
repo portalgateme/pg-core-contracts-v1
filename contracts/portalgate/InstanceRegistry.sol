@@ -49,9 +49,8 @@ contract InstanceRegistry {
         _;
     }
 
-    constructor(address _governance, address _pgRouter, TornadoConfig[] memory _instances) {
-        governance = _governance;
-        router = PGRouter(_pgRouter);
+    constructor(address _governance, TornadoConfig[] memory _instances) {
+        governance = _governance;        
         for (uint256 i = 0; i < _instances.length; i++) {
             _updateInstance(_instances[i]);
             instanceIds.push(_instances[i].addr);
