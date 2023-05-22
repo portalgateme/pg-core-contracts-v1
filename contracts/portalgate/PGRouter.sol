@@ -92,7 +92,7 @@ contract PGRouter {
             "The instance is not allowed to withdraw"
         );
         require(
-            relayerRegistry.isRelayerRegistered(_relayer),
+            relayerRegistry.isRelayerRegistered(msg.sender),
             "Invalid Relayer"
         );        
 
