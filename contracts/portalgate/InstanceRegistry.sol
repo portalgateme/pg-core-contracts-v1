@@ -49,8 +49,14 @@ contract InstanceRegistry {
         _;
     }
 
-    constructor(address _governance, TornadoConfig[] memory _instances) {
-        governance = _governance;        
+    constructor(address _governance) {
+        governance = _governance;
+    }
+
+    /**
+     * @dev initialise a set of tornado instances.
+     */
+    function initInstances(TornadoConfig[] memory _instances) external onlyGovernance {
         for (uint256 i = 0; i < _instances.length; i++) {
             _updateInstance(_instances[i]);
             instanceIds.push(_instances[i].addr);
