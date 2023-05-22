@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./RelayerRegistry.sol";
-import "../tornado-core/ERC20Tornado.sol";
+import "../tornado-core/Tornado.sol";
 
 contract PGRouter {
     RelayerRegistry public relayerRegistry;
@@ -14,7 +14,6 @@ contract PGRouter {
 
     function withdraw(
         Tornado _tornado,
-        address _relayerAddress,
         bytes calldata _proof,
         bytes32 _root,
         bytes32 _nullifierHash,
@@ -23,7 +22,10 @@ contract PGRouter {
         uint256 _fee,
         uint256 _refund
     ) public payable virtual {
-        require(relayerRegistry.isRelayerRegistered(_relayerAddress), "Invalid Relayer");
+        require(
+            relayerRegistry.isRelayerRegistered(msg.sender),
+            "Invalid Relayer"
+        );
 
         _tornado.withdraw{value: msg.value}(
             _proof,
@@ -35,5 +37,4 @@ contract PGRouter {
             _refund
         );
     }
-
 }
