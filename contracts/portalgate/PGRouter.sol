@@ -49,6 +49,8 @@ contract PGRouter {
             IERC20 token,
             InstanceRegistry.InstanceState state,
             ,
+            ,
+            uint maxDepositAmount
 
         ) = instanceRegistry.instances(_tornado);
         require(
@@ -56,8 +58,8 @@ contract PGRouter {
             "The instance is not supported"
         );
         require(
-            state != InstanceRegistry.InstanceState.DEPOSIT_DISABLED,
-            "The instance is not allowed to deposit"
+           // checks the pool current amount
+           // current amount < maxDepositAmount
         );
 
         if (isERC20) {

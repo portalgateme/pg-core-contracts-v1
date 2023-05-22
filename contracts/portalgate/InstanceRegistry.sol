@@ -25,6 +25,7 @@ contract InstanceRegistry {
         uint24 uniswapPoolSwappingFee;
         // the fee the protocol takes from relayer, it should be multiplied by PROTOCOL_FEE_DIVIDER from FeeManager.sol
         uint32 protocolFeePercentage;
+        uint maxDepositAmount;
     }
 
     struct TornadoConfig {
