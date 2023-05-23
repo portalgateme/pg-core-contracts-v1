@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -48,19 +50,18 @@ contract PGRouter {
             bool isERC20,
             IERC20 token,
             InstanceRegistry.InstanceState state,
-            ,
-            ,
-            uint maxDepositAmount
-
+            uint24 uniswapPoolSwappingFee,
+            uint32 protocolFeePercentage,
+            uint256 maxDepositAmount
         ) = instanceRegistry.instances(_tornado);
         require(
             state != InstanceRegistry.InstanceState.DISABLED,
             "The instance is not supported"
         );
-        require(
-           // checks the pool current amount
-           // current amount < maxDepositAmount
-        );
+//        require(
+//           // checks the pool current amount
+//           // current amount < maxDepositAmount
+//        );
 
         if (isERC20) {
             token.safeTransferFrom(
@@ -83,7 +84,7 @@ contract PGRouter {
         uint256 _fee,
         uint256 _refund
     ) public payable virtual {
-        (, , InstanceRegistry.InstanceState state, , ) = instanceRegistry
+        (, , InstanceRegistry.InstanceState state, , , ) = instanceRegistry
             .instances(_tornado);
         require(
             state != InstanceRegistry.InstanceState.DISABLED,

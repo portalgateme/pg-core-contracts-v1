@@ -8,12 +8,17 @@ import type {
   BytesLike,
   CallOverrides,
   ContractTransaction,
+  Overrides,
   PayableOverrides,
   PopulatedTransaction,
   Signer,
   utils,
 } from "ethers";
-import type { FunctionFragment, Result } from "@ethersproject/abi";
+import type {
+  FunctionFragment,
+  Result,
+  EventFragment,
+} from "@ethersproject/abi";
 import type { Listener, Provider } from "@ethersproject/providers";
 import type {
   TypedEventFilter,
@@ -25,18 +30,92 @@ import type {
 
 export interface PGRouterInterface extends utils.Interface {
   functions: {
+    "approveExactToken(address,address,uint256)": FunctionFragment;
+    "backupNotes(bytes[])": FunctionFragment;
+    "deposit(address,bytes32,bytes)": FunctionFragment;
+    "governance()": FunctionFragment;
+    "instanceRegistry()": FunctionFragment;
     "relayerRegistry()": FunctionFragment;
-    "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)": FunctionFragment;
+    "rescueTokens(address,address,uint256)": FunctionFragment;
+    "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
+      | "approveExactToken"
+      | "approveExactToken(address,address,uint256)"
+      | "backupNotes"
+      | "backupNotes(bytes[])"
+      | "deposit"
+      | "deposit(address,bytes32,bytes)"
+      | "governance"
+      | "governance()"
+      | "instanceRegistry"
+      | "instanceRegistry()"
       | "relayerRegistry"
       | "relayerRegistry()"
+      | "rescueTokens"
+      | "rescueTokens(address,address,uint256)"
       | "withdraw"
-      | "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)"
+      | "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "approveExactToken",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "approveExactToken(address,address,uint256)",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "backupNotes",
+    values: [PromiseOrValue<BytesLike>[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "backupNotes(bytes[])",
+    values: [PromiseOrValue<BytesLike>[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "deposit",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<BytesLike>,
+      PromiseOrValue<BytesLike>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "deposit(address,bytes32,bytes)",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<BytesLike>,
+      PromiseOrValue<BytesLike>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "governance",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "governance()",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "instanceRegistry",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "instanceRegistry()",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "relayerRegistry",
     values?: undefined
@@ -44,12 +123,27 @@ export interface PGRouterInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "relayerRegistry()",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "rescueTokens",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "rescueTokens(address,address,uint256)",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "withdraw",
     values: [
       PromiseOrValue<string>,
-      PromiseOrValue<string>,
       PromiseOrValue<BytesLike>,
       PromiseOrValue<BytesLike>,
       PromiseOrValue<BytesLike>,
@@ -60,9 +154,8 @@ export interface PGRouterInterface extends utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)",
+    functionFragment: "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)",
     values: [
-      PromiseOrValue<string>,
       PromiseOrValue<string>,
       PromiseOrValue<BytesLike>,
       PromiseOrValue<BytesLike>,
@@ -75,6 +168,40 @@ export interface PGRouterInterface extends utils.Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "approveExactToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "approveExactToken(address,address,uint256)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "backupNotes",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "backupNotes(bytes[])",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "deposit(address,bytes32,bytes)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "governance", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "governance()",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "instanceRegistry",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "instanceRegistry()",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "relayerRegistry",
     data: BytesLike
   ): Result;
@@ -82,14 +209,40 @@ export interface PGRouterInterface extends utils.Interface {
     functionFragment: "relayerRegistry()",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "rescueTokens",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "rescueTokens(address,address,uint256)",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)",
+    functionFragment: "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)",
     data: BytesLike
   ): Result;
 
-  events: {};
+  events: {
+    "EncryptedNote(address,bytes)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "EncryptedNote"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic: "EncryptedNote(address,bytes)"
+  ): EventFragment;
 }
+
+export interface EncryptedNoteEventObject {
+  sender: string;
+  encryptedNote: string;
+}
+export type EncryptedNoteEvent = TypedEvent<
+  [string, string],
+  EncryptedNoteEventObject
+>;
+
+export type EncryptedNoteEventFilter = TypedEventFilter<EncryptedNoteEvent>;
 
 export interface PGRouter extends BaseContract {
   contractName: "PGRouter";
@@ -120,13 +273,72 @@ export interface PGRouter extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    approveExactToken(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    "approveExactToken(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    backupNotes(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    "backupNotes(bytes[])"(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    deposit(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    "deposit(address,bytes32,bytes)"(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    governance(overrides?: CallOverrides): Promise<[string]>;
+
+    "governance()"(overrides?: CallOverrides): Promise<[string]>;
+
+    instanceRegistry(overrides?: CallOverrides): Promise<[string]>;
+
+    "instanceRegistry()"(overrides?: CallOverrides): Promise<[string]>;
+
     relayerRegistry(overrides?: CallOverrides): Promise<[string]>;
 
     "relayerRegistry()"(overrides?: CallOverrides): Promise<[string]>;
 
+    rescueTokens(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    "rescueTokens(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     withdraw(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -137,9 +349,8 @@ export interface PGRouter extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
+    "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -151,13 +362,72 @@ export interface PGRouter extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
+  approveExactToken(
+    _token: PromiseOrValue<string>,
+    _spender: PromiseOrValue<string>,
+    _amount: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  "approveExactToken(address,address,uint256)"(
+    _token: PromiseOrValue<string>,
+    _spender: PromiseOrValue<string>,
+    _amount: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  backupNotes(
+    _encryptedNotes: PromiseOrValue<BytesLike>[],
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  "backupNotes(bytes[])"(
+    _encryptedNotes: PromiseOrValue<BytesLike>[],
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  deposit(
+    _tornado: PromiseOrValue<string>,
+    _commitment: PromiseOrValue<BytesLike>,
+    _encryptedNote: PromiseOrValue<BytesLike>,
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  "deposit(address,bytes32,bytes)"(
+    _tornado: PromiseOrValue<string>,
+    _commitment: PromiseOrValue<BytesLike>,
+    _encryptedNote: PromiseOrValue<BytesLike>,
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  governance(overrides?: CallOverrides): Promise<string>;
+
+  "governance()"(overrides?: CallOverrides): Promise<string>;
+
+  instanceRegistry(overrides?: CallOverrides): Promise<string>;
+
+  "instanceRegistry()"(overrides?: CallOverrides): Promise<string>;
+
   relayerRegistry(overrides?: CallOverrides): Promise<string>;
 
   "relayerRegistry()"(overrides?: CallOverrides): Promise<string>;
 
+  rescueTokens(
+    _token: PromiseOrValue<string>,
+    _to: PromiseOrValue<string>,
+    _amount: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  "rescueTokens(address,address,uint256)"(
+    _token: PromiseOrValue<string>,
+    _to: PromiseOrValue<string>,
+    _amount: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   withdraw(
     _tornado: PromiseOrValue<string>,
-    _relayerAddress: PromiseOrValue<string>,
     _proof: PromiseOrValue<BytesLike>,
     _root: PromiseOrValue<BytesLike>,
     _nullifierHash: PromiseOrValue<BytesLike>,
@@ -168,9 +438,8 @@ export interface PGRouter extends BaseContract {
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
+  "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
     _tornado: PromiseOrValue<string>,
-    _relayerAddress: PromiseOrValue<string>,
     _proof: PromiseOrValue<BytesLike>,
     _root: PromiseOrValue<BytesLike>,
     _nullifierHash: PromiseOrValue<BytesLike>,
@@ -182,13 +451,72 @@ export interface PGRouter extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    approveExactToken(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "approveExactToken(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    backupNotes(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "backupNotes(bytes[])"(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    deposit(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "deposit(address,bytes32,bytes)"(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    governance(overrides?: CallOverrides): Promise<string>;
+
+    "governance()"(overrides?: CallOverrides): Promise<string>;
+
+    instanceRegistry(overrides?: CallOverrides): Promise<string>;
+
+    "instanceRegistry()"(overrides?: CallOverrides): Promise<string>;
+
     relayerRegistry(overrides?: CallOverrides): Promise<string>;
 
     "relayerRegistry()"(overrides?: CallOverrides): Promise<string>;
 
+    rescueTokens(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "rescueTokens(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     withdraw(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -199,9 +527,8 @@ export interface PGRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
+    "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -213,16 +540,84 @@ export interface PGRouter extends BaseContract {
     ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "EncryptedNote(address,bytes)"(
+      sender?: PromiseOrValue<string> | null,
+      encryptedNote?: null
+    ): EncryptedNoteEventFilter;
+    EncryptedNote(
+      sender?: PromiseOrValue<string> | null,
+      encryptedNote?: null
+    ): EncryptedNoteEventFilter;
+  };
 
   estimateGas: {
+    approveExactToken(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    "approveExactToken(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    backupNotes(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    "backupNotes(bytes[])"(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    deposit(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    "deposit(address,bytes32,bytes)"(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    governance(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "governance()"(overrides?: CallOverrides): Promise<BigNumber>;
+
+    instanceRegistry(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "instanceRegistry()"(overrides?: CallOverrides): Promise<BigNumber>;
+
     relayerRegistry(overrides?: CallOverrides): Promise<BigNumber>;
 
     "relayerRegistry()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    rescueTokens(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    "rescueTokens(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     withdraw(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -233,9 +628,8 @@ export interface PGRouter extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
+    "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -248,15 +642,76 @@ export interface PGRouter extends BaseContract {
   };
 
   populateTransaction: {
+    approveExactToken(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    "approveExactToken(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _spender: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    backupNotes(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    "backupNotes(bytes[])"(
+      _encryptedNotes: PromiseOrValue<BytesLike>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    deposit(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    "deposit(address,bytes32,bytes)"(
+      _tornado: PromiseOrValue<string>,
+      _commitment: PromiseOrValue<BytesLike>,
+      _encryptedNote: PromiseOrValue<BytesLike>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    governance(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "governance()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    instanceRegistry(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "instanceRegistry()"(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     relayerRegistry(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "relayerRegistry()"(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    rescueTokens(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    "rescueTokens(address,address,uint256)"(
+      _token: PromiseOrValue<string>,
+      _to: PromiseOrValue<string>,
+      _amount: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     withdraw(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,
@@ -267,9 +722,8 @@ export interface PGRouter extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    "withdraw(address,address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
+    "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"(
       _tornado: PromiseOrValue<string>,
-      _relayerAddress: PromiseOrValue<string>,
       _proof: PromiseOrValue<BytesLike>,
       _root: PromiseOrValue<BytesLike>,
       _nullifierHash: PromiseOrValue<BytesLike>,

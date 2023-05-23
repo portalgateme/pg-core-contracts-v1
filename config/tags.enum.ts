@@ -4,4 +4,6 @@ export enum DeployTags {
   RelayerRegistry = "relayer-registry",
   RelayerAggregator = "relayer-aggregator",
   PGRouter = "pg-router",
+  InstanceRegistry = "instance-registry",
+  MockERC20 = "mock-erc20",
 }

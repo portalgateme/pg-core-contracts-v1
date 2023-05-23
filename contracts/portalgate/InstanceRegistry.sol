@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.14;
 
+import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/ITornadoInstance.sol";
@@ -25,7 +27,7 @@ contract InstanceRegistry {
         uint24 uniswapPoolSwappingFee;
         // the fee the protocol takes from relayer, it should be multiplied by PROTOCOL_FEE_DIVIDER from FeeManager.sol
         uint32 protocolFeePercentage;
-        uint maxDepositAmount;
+        uint256 maxDepositAmount;
     }
 
     struct TornadoConfig {
@@ -141,6 +143,7 @@ contract InstanceRegistry {
 
     function _updateInstance(TornadoConfig memory _tornadoConf) internal virtual {
         instances[_tornadoConf.addr] = _tornadoConf.instance;
+
         if (_tornadoConf.instance.isERC20) {
             IERC20 token = IERC20(_tornadoConf.addr.token());
             require(token == _tornadoConf.instance.token, "Incorrect token");

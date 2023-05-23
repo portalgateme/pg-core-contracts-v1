@@ -7,6 +7,8 @@ import type * as keyring from "./keyring";
 export type { keyring };
 import type * as libs from "./libs";
 export type { libs };
+import type * as mocks from "./mocks";
+export type { mocks };
 import type * as portalgate from "./portalgate";
 export type { portalgate };
 import type * as tornadoCore from "./tornado-core";

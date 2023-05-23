@@ -136,6 +136,10 @@ export type { Verifier20 } from "./contracts/keyring/zkVerifiers/membershipProof
 export { Verifier20__factory } from "./factories/contracts/keyring/zkVerifiers/membershipProof/contracts/IdentityMembershipProofVerifier.sol/Verifier20__factory";
 export type { EnsResolve } from "./contracts/libs/EnsResolve";
 export { EnsResolve__factory } from "./factories/contracts/libs/EnsResolve__factory";
+export type { InstanceMockERC20 } from "./contracts/mocks/InstanceMockERC20";
+export { InstanceMockERC20__factory } from "./factories/contracts/mocks/InstanceMockERC20__factory";
+export type { InstanceRegistry } from "./contracts/portalgate/InstanceRegistry";
+export { InstanceRegistry__factory } from "./factories/contracts/portalgate/InstanceRegistry__factory";
 export type { KycETH } from "./contracts/portalgate/KycETH";
 export { KycETH__factory } from "./factories/contracts/portalgate/KycETH__factory";
 export type { PGRouter } from "./contracts/portalgate/PGRouter";

@@ -1,6 +1,6 @@
 import { DeployFunction } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { network } from "hardhat";
+import { ethers, network } from "hardhat";
 import { DeployTags } from "../config/tags.enum";
 
 const deployPGRouter: DeployFunction = async ({
@@ -11,14 +11,21 @@ const deployPGRouter: DeployFunction = async ({
   const { deployer } = await getNamedAccounts();
   const chainId = network.config.chainId!;
 
+  const InstanceRegistry = await deployments.get("InstanceRegistry");
   const RelayerRegistry = await deployments.get("RelayerRegistry");
 
-  await deploy("PGRouter", {
+  const pgRouter = await deploy("PGRouter", {
     from: deployer,
-    args: [RelayerRegistry.address],
+    args: [deployer, InstanceRegistry.address, RelayerRegistry.address],
     log: true,
     waitConfirmations: chainId === 31337 ? 1 : 6,
   });
+
+  const instanceRegistryContract = await ethers.getContract(
+    "InstanceRegistry",
+    deployer
+  );
+  await instanceRegistryContract.setPGRouter(pgRouter.address);
 };
 
 export default deployPGRouter;
