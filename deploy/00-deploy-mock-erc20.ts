@@ -21,8 +21,4 @@ const deployInstanceMockERC20: DeployFunction = async ({
 
 export default deployInstanceMockERC20;
 
-deployInstanceMockERC20.tags = [
-  DeployTags.TEST,
-  DeployTags.STAGE,
-  DeployTags.MockERC20,
-];
+deployInstanceMockERC20.tags = [DeployTags.TEST, DeployTags.MockERC20];
