@@ -10,19 +10,19 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
- @notice This contract illustrates how an immutable KeyringGuard can be wrapped around collateral tokens 
+ @notice This contract illustrates how an immutable KeyringGuard can be wrapped around collateral tokens
  (e.g. DAI Token). Specify the token to wrap and the new name/symbol of the wrapped token - then good to go!
  Tokens can only be transferred to an address that maintains compliance with the configured policy.
  */
 
 contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
-        
+
     using SafeERC20 for IERC20;
 
     string private constant MODULE = "KycERC20";
 
     modifier checkAuthorisations(address from, address to) {
-        if (!checkGuard(from, to)) 
+        if (!checkGuard(from, to))
             revert Unacceptable({
                 reason: "trader not authorized"
             });
@@ -124,8 +124,8 @@ contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
      @param amount The amount to be deducted from the to's allowance.
      @return bool True if successfully executed.
      */
-    function transferFrom(address from, address to, uint256 amount) 
-        public 
+    function transferFrom(address from, address to, uint256 amount)
+        public
         override(IERC20, ERC20)
         checkAuthorisations(from, to)
         returns (bool)
@@ -148,7 +148,7 @@ contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
     }
 
     /**
-     * @notice Returns msg.data if not from a trusted forwarder, or truncated msg.data if the signer was 
+     * @notice Returns msg.data if not from a trusted forwarder, or truncated msg.data if the signer was
      appended to msg.data
      * @dev Although not currently used, this function forms part of ERC2771 so is included for completeness.
      * @return data Data deemed to be the msg.data
@@ -162,5 +162,5 @@ contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
     {
         return ERC2771Context._msgData();
     }
-    
+
 }

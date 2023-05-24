@@ -42,12 +42,12 @@ contract PGRouter {
       bool isERC20,
       IERC20 token,
       InstanceRegistry.InstanceState state,
-      uint24 uniswapPoolSwappingFee,
-      uint32 protocolFeePercentage,
+      ,
+      ,
       uint256 maxDepositAmount
     ) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
-    require(token.balanceOf(_tornado) < maxDepositAmount, "Exceed deposit Cap for the pool");
+    require(token.balanceOf(address(_tornado)) < maxDepositAmount, "Exceed deposit Cap for the pool");
 
     if (isERC20) {
       token.safeTransferFrom(msg.sender, address(this), _tornado.denomination());
@@ -68,7 +68,6 @@ contract PGRouter {
   ) public payable virtual {
     (, , InstanceRegistry.InstanceState state, , , ) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
-    require(state != InstanceRegistry.InstanceState.WITHDRAW_DISABLED, "The instance is not allowed to withdraw");
 
     if (_relayer != _recipient) {
       require(
