@@ -75,6 +75,8 @@ contract PGRouter {
         relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender),
         "Invalid Relayer"
       );
+
+      // keyring.attestate("". "". "". "". "");
     }
 
     _tornado.withdraw{ value: msg.value }(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);

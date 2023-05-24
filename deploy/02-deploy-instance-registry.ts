@@ -5,10 +5,10 @@ import { DeployTags } from "../config/tags.enum";
 
 let instances: any[] = [
   {
-    addr: "",
+    addr: "instance_address",
     instance: {
       isERC20: true,
-      token: "",
+      token: "kyc_address",
       state: 1,
       uniswapPoolSwappingFee: 0,
       protocolFeePercentage: 0,
@@ -16,10 +16,10 @@ let instances: any[] = [
     },
   },
   {
-    addr: "",
+    addr: "instance_address",
     instance: {
       isERC20: true,
-      token: "",
+      token: "kyc_address",
       state: 1,
       uniswapPoolSwappingFee: 0,
       protocolFeePercentage: 0,

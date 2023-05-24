@@ -14,7 +14,7 @@ contract InstanceRegistry {
 
     enum InstanceState {
         DISABLED,
-        ENABLED        
+        ENABLED
     }
 
     struct Instance {
