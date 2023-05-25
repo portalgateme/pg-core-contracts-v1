@@ -70,7 +70,13 @@ contract PGRouter {
     uint256 _refund,
     bool _zapOut
   ) public payable virtual {
-    (, IERC20 token, InstanceRegistry.InstanceState state, , , ,) = instanceRegistry.instances(_tornado);
+    (
+      ,
+      IERC20 token,
+      InstanceRegistry.InstanceState state,
+      ,
+      ,
+    ) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
 
     if (_relayer != _recipient) {
