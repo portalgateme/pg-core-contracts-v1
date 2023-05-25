@@ -7,10 +7,12 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "./IntermediaryVault.sol";
 import "./RelayerRegistry.sol";
 import "./InstanceRegistry.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "../tornado-core/Tornado.sol";
+import "../keyring/interfaces/IKycERC20.sol";
 
 contract PGRouter {
   using SafeERC20 for IERC20;
@@ -61,12 +63,14 @@ contract PGRouter {
     bytes calldata _proof,
     bytes32 _root,
     bytes32 _nullifierHash,
+    address payable _interVault,
     address payable _recipient,
     address payable _relayer,
     uint256 _fee,
-    uint256 _refund
+    uint256 _refund,
+    bool _zapOut
   ) public payable virtual {
-    (, , InstanceRegistry.InstanceState state, , , ) = instanceRegistry.instances(_tornado);
+    (, IERC20 token, InstanceRegistry.InstanceState state, , , ,) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
 
     if (_relayer != _recipient) {
@@ -74,11 +78,18 @@ contract PGRouter {
         relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender),
         "Invalid Relayer"
       );
-
-      // keyring.attestate("". "". "". "". "");
     }
 
-    _tornado.withdraw{ value: msg.value }(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
+    // keyring attestation needed.
+
+    if (_zapOut) {
+      _tornado.withdraw(_proof, _root, _nullifierHash, _interVault, _relayer, _fee, _refund);
+      IntermediaryVault intermediaryVault = IntermediaryVault(_interVault);
+      intermediaryVault.withdraw(address(token), _recipient);
+    } else {
+      _tornado.withdraw(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
+    }
+
   }
 
   /**
