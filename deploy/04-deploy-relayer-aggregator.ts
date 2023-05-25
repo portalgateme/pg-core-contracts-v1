@@ -1,30 +1,26 @@
-import { DeployFunction } from "hardhat-deploy/dist/types";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { network } from "hardhat";
-import { DeployTags } from "../config/tags.enum";
+import { DeployFunction } from 'hardhat-deploy/dist/types'
+import { HardhatRuntimeEnvironment } from 'hardhat/types'
+import { network } from 'hardhat'
+import { DeployTags } from '../types/tags.enum'
 
 const deployRelayerAggregator: DeployFunction = async ({
   deployments,
   getNamedAccounts,
 }: HardhatRuntimeEnvironment) => {
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
-  const chainId = network.config.chainId!;
+  const { deploy } = deployments
+  const { deployer } = await getNamedAccounts()
+  const chainId = network.config.chainId!
 
-  const RelayerRegistry = await deployments.get("RelayerRegistry");
+  const RelayerRegistry = await deployments.get('RelayerRegistry')
 
-  await deploy("RelayerAggregator", {
+  await deploy('RelayerAggregator', {
     from: deployer,
     args: [RelayerRegistry.address],
     log: true,
     waitConfirmations: chainId === 31337 ? 1 : 6,
-  });
-};
+  })
+}
 
-export default deployRelayerAggregator;
+export default deployRelayerAggregator
 
-deployRelayerAggregator.tags = [
-  DeployTags.TEST,
-  DeployTags.STAGE,
-  DeployTags.RelayerAggregator,
-];
+deployRelayerAggregator.tags = [DeployTags.TEST, DeployTags.STAGE, DeployTags.RelayerAggregator]
