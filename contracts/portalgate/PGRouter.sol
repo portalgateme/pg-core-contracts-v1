@@ -12,7 +12,6 @@ import "./RelayerRegistry.sol";
 import "./InstanceRegistry.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "../tornado-core/Tornado.sol";
-import "../keyring/interfaces/IKycERC20.sol";
 
 contract PGRouter {
   using SafeERC20 for IERC20;

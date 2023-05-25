@@ -7,7 +7,7 @@ import "../interfaces/ITornadoInstance.sol";
 import "./PGRouter.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Zapper {
   PGRouter public pgRouter;
@@ -16,15 +16,18 @@ contract Zapper {
     pgRouter = PGRouter(_pgRouter);
   }
 
-  function zappIn(address _kycErc20, ITornadoInstance _tornado, uint _approveAmt, uint _zappedInAmt, bytes32 _commitment) external {
+  function zappIn(address _erc20, address _kycErc20, ITornadoInstance _tornado, uint _approveAmt, uint _zappedInAmt, bytes32 _commitment) external {
+    ERC20 erc20 = ERC20(_erc20);
     KycERC20 kycErc20 = KycERC20(_kycErc20);
     uint approveAmt1 = kycErc20.allowance(msg.sender, address(this));
 
+    erc20.transferFrom(msg.sender, address(this), _zappedInAmt);
+
     if (approveAmt1 <= _approveAmt) {
-      kycErc20.increaseAllowance(address(this), _approveAmt);
+      erc20.increaseAllowance(_kycErc20, _approveAmt);
     }
-    kycErc20.transfer(address(this), _zappedInAmt);
-    kycErc20.depositFor(msg.sender, _zappedInAmt);
+
+    kycErc20.depositFor(address(this), _zappedInAmt);
 
     uint approveAmt2 = kycErc20.allowance(address(this), address(pgRouter));
     if (approveAmt2 <= _approveAmt) {
