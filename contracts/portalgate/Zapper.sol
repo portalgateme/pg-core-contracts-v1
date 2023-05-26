@@ -6,48 +6,70 @@ import "./KycERC20.sol";
 import "./KycETH.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "./PGRouter.sol";
+import "./InstanceRegistry.sol";
+
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Zapper {
-  PGRouter public pgRouter;
+  using SafeERC20 for IERC20;
 
-  constructor(address _pgRouter) {
+  PGRouter public pgRouter;
+  InstanceRegistry public instanceRegistry;
+
+  constructor(address _pgRouter, address _instanceRegistry) {
     pgRouter = PGRouter(_pgRouter);
+    instanceRegistry = InstanceRegistry(_instanceRegistry);
   }
 
-  function zapInEth(address _kycEth, ITornadoInstance _tornado, bytes32 _commitment) public payable {
-    KycETH kycEth = KycETH(_kycEth);
+  function zapInEth(ITornadoInstance _tornado, bytes32 _commitment) public payable {
+    (
+      ,
+      IERC20 token,
+      ,
+      ,
+      ,
+    ) = instanceRegistry.instances(_tornado);
 
+    address _kycEth = address(token);
+    KycETH kycEth = KycETH(_kycEth);
     kycEth.depositFor{value: msg.value}();
 
     uint approveAmt = kycEth.allowance(address(this), address(pgRouter));
-    if (approveAmt <= msg.value) {
-      kycEth.approve(address(pgRouter), msg.value);
+    if (approveAmt < _tornado.denomination()) {
+      kycEth.approve(address(pgRouter), _tornado.denomination());
     }
 
     pgRouter.deposit(_tornado, _commitment, "0x");
   }
 
-  function zapIn(address _erc20, address _kycErc20, ITornadoInstance _tornado, uint _approveAmt, uint _zappedInAmt, bytes32 _commitment) external {
-    ERC20 erc20 = ERC20(_erc20);
+  /**
+    @notice Check membership and authorization proofs using circom verifiers. Both proofs must be
+     generated from the same identity commitment.
+    @param _tornado The address for the deployed KeyringCredentials contract.
+    @param _commitment The unique identifier of a Policy.
+  */
+  function zapIn(ITornadoInstance _tornado, bytes32 _commitment) external {
+
+    (
+      ,
+      IERC20 token,
+      ,
+      ,
+      ,
+    ) = instanceRegistry.instances(_tornado);
+
+    address _kycErc20 = address(token);
     KycERC20 kycErc20 = KycERC20(_kycErc20);
-    uint approveAmt1 = kycErc20.allowance(msg.sender, address(this));
+    IERC20 erc20 = kycErc20.underlying();
+    erc20.safeTransferFrom(msg.sender, address(this), _tornado.denomination());
+    erc20.approve(_kycErc20, _tornado.denomination());
 
-    erc20.transferFrom(msg.sender, address(this), _zappedInAmt);
-
-    if (approveAmt1 <= _approveAmt) {
-      erc20.increaseAllowance(_kycErc20, _approveAmt);
-    }
-
-    kycErc20.depositFor(address(this), _zappedInAmt);
-
-    uint approveAmt2 = kycErc20.allowance(address(this), address(pgRouter));
-    if (approveAmt2 <= _approveAmt) {
-      kycErc20.increaseAllowance(address(pgRouter), _approveAmt);
-    }
-
+    kycErc20.depositFor(address(this), _tornado.denomination());
+    kycErc20.approve(address(pgRouter), _tornado.denomination());
     pgRouter.deposit(_tornado, _commitment, "0x");
   }
 
