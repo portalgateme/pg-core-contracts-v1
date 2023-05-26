@@ -18,7 +18,7 @@ contract KycETH is KeyringGuard {
     mapping (address => mapping (address => uint))  public  allowance;
 
     modifier checkAuthorisations(address from, address to) {
-        if (!checkGuard(from, to)) 
+        if (!checkGuard(from, to))
             revert Unacceptable({
                 reason: "trader not authorized"
             });
@@ -48,7 +48,7 @@ contract KycETH is KeyringGuard {
         emit Deposit(msg.sender, msg.value);
     }
 
-    function withdrawTo(uint amount) public        
+    function withdrawTo(uint amount) public
     {
         require(balanceOf[msg.sender] >= amount);
         balanceOf[msg.sender] -= amount;

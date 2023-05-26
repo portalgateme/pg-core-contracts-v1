@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./KycERC20.sol";
+import "./KycETH.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "./PGRouter.sol";
 
@@ -16,7 +17,20 @@ contract Zapper {
     pgRouter = PGRouter(_pgRouter);
   }
 
-  function zappIn(address _erc20, address _kycErc20, ITornadoInstance _tornado, uint _approveAmt, uint _zappedInAmt, bytes32 _commitment) external {
+  function zapInEth(address _kycEth, ITornadoInstance _tornado, bytes32 _commitment) public payable {
+    KycETH kycEth = KycETH(_kycEth);
+
+    kycEth.depositFor{value: msg.value}();
+
+    uint approveAmt = kycEth.allowance(address(this), address(pgRouter));
+    if (approveAmt <= msg.value) {
+      kycEth.approve(address(pgRouter), msg.value);
+    }
+
+    pgRouter.deposit(_tornado, _commitment, "0x");
+  }
+
+  function zapIn(address _erc20, address _kycErc20, ITornadoInstance _tornado, uint _approveAmt, uint _zappedInAmt, bytes32 _commitment) external {
     ERC20 erc20 = ERC20(_erc20);
     KycERC20 kycErc20 = KycERC20(_kycErc20);
     uint approveAmt1 = kycErc20.allowance(msg.sender, address(this));
