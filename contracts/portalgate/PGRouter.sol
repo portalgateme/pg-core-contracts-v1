@@ -62,7 +62,7 @@ contract PGRouter {
     bytes calldata _proof,
     bytes32 _root,
     bytes32 _nullifierHash,
-    address payable _interVault,
+    address payable _intermediaryVault,
     address payable _recipient,
     address payable _relayer,
     uint256 _fee,
@@ -78,21 +78,21 @@ contract PGRouter {
     ) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
 
-    if (_relayer != _recipient) {
+    if (_relayer != _recipient && _relayer != _intermediaryVault) {
       require(
         relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender),
-        "Invalid Relayer"
+        "Invalid Relayer."
       );
     }
 
     // keyring attestation needed.
 
     if (_zapOut) {
-      _tornado.withdraw(_proof, _root, _nullifierHash, _interVault, _relayer, _fee, _refund);
-      IntermediaryVault intermediaryVault = IntermediaryVault(_interVault);
-      intermediaryVault.withdraw(address(token), _recipient);
+      _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _intermediaryVault, _relayer, _fee, _refund);
+      IntermediaryVault intermediaryVault = IntermediaryVault(_intermediaryVault);
+      intermediaryVault.withdraw(address(token), _recipient, _refund);
     } else {
-      _tornado.withdraw(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
+      _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
     }
 
   }
