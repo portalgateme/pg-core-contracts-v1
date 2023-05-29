@@ -51,7 +51,7 @@ contract KycETH is KeyringGuard {
     function withdrawTo(address to, uint amount) public
     {
       if(to != _msgSender()) {
-        if (!checkGuard(_msgSender(), trader))
+        if (!checkGuard(_msgSender(), to))
           revert Unacceptable({
               reason: "trader not authorized"
           });
