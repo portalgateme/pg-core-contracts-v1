@@ -62,12 +62,10 @@ contract PGRouter {
     bytes calldata _proof,
     bytes32 _root,
     bytes32 _nullifierHash,
-    address payable _intermediaryVault,
     address payable _recipient,
     address payable _relayer,
     uint256 _fee,
-    uint256 _refund,
-    bool _zapOut
+    uint256 _refund
   ) public payable virtual {
     (
       ,
@@ -80,20 +78,15 @@ contract PGRouter {
 
     if (_relayer != _recipient && _relayer != _intermediaryVault) {
       require(
-        relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender),
+        relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender) && msg.sender == _relayer,
         "Invalid Relayer."
       );
     }
 
-    // keyring attestation needed.
+    // keyring attestation needed. TBC
 
-    if (_zapOut) {
-      _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _intermediaryVault, _relayer, _fee, _refund);
-      IntermediaryVault intermediaryVault = IntermediaryVault(_intermediaryVault);
-      intermediaryVault.withdraw(address(token), _recipient, _refund);
-    } else {
-      _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
-    }
+
+     _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
 
   }
 
