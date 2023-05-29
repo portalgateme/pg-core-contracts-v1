@@ -44,16 +44,23 @@ contract KycETH is KeyringGuard {
 
     function depositFor() public payable
     {
-        balanceOf[msg.sender] += msg.value;
-        emit Deposit(msg.sender, msg.value);
+      balanceOf[msg.sender] += msg.value;
+      emit Deposit(msg.sender, msg.value);
     }
 
-    function withdrawTo(uint amount) public
+    function withdrawTo(address to, uint amount) public
     {
-        require(balanceOf[msg.sender] >= amount);
-        balanceOf[msg.sender] -= amount;
-        payable(msg.sender).transfer(amount);
-        emit Withdrawal(msg.sender, amount);
+      if(to != _msgSender()) {
+        if (!checkGuard(_msgSender(), trader))
+          revert Unacceptable({
+              reason: "trader not authorized"
+          });
+      }
+
+      require(balanceOf[msg.sender] >= amount);
+      balanceOf[msg.sender] -= amount;
+      payable(to).transfer(amount);
+      emit Withdrawal(msg.sender, amount);
     }
 
     function totalSupply() public view returns (uint) {

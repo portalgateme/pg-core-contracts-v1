@@ -25,6 +25,11 @@ contract Zapper {
     instanceRegistry = InstanceRegistry(_instanceRegistry);
   }
 
+  /**
+    @notice .
+    @param _tornado .
+    @param _commitment .
+  */
   function zapInEth(ITornadoInstance _tornado, bytes32 _commitment) public payable {
     (
       ,

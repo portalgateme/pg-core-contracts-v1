@@ -86,6 +86,13 @@ contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
         override(IKycERC20, ERC20Wrapper)
         returns (bool)
     {
+        if(trader != _msgSender()) {
+          if (!checkGuard(_msgSender(), trader))
+            revert Unacceptable({
+                reason: "trader not authorized"
+            });
+        }
+
         return ERC20Wrapper.depositFor(trader, amount);
     }
 
@@ -99,6 +106,13 @@ contract KycERC20 is IKycERC20, ERC20Permit, ERC20Wrapper, KeyringGuard {
         override(IKycERC20, ERC20Wrapper)
         returns (bool)
     {
+        if(trader != _msgSender()) {
+          if (!checkGuard(_msgSender(), trader))
+            revert Unacceptable({
+                reason: "trader not authorized"
+            });
+        }
+
         return ERC20Wrapper.withdrawTo(trader, amount);
     }
 

@@ -65,4 +65,8 @@ contract IntermediaryVault {
       _token.safeTransfer(_to, balance);
     }
   }
+
+  receive() external payable {
+
+  }
 }
