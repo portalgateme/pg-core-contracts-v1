@@ -69,14 +69,14 @@ contract PGRouter {
   ) public payable virtual {
     (
       ,
-      IERC20 token,
+      ,
       InstanceRegistry.InstanceState state,
       ,
       ,
     ) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
 
-    if (_relayer != _recipient && _relayer != _intermediaryVault) {
+    if (_relayer != _recipient) {
       require(
         relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender) && msg.sender == _relayer,
         "Invalid Relayer."
