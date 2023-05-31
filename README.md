@@ -36,6 +36,8 @@ npm run test
 
 ## Deployment
 
+### Goerli testnet
+
 1. Compile contracts
 
 ```bash
@@ -55,3 +57,26 @@ _Contracts may already be deployed on Goerli testnet. If you want to deploy them
 ```bash
 npm run verify:goerli
 ```
+
+### Local network
+
+1. Compile contracts
+
+```bash
+npm run compile
+```
+
+2. Run local network
+
+```bash
+npm run private-network
+```
+
+3. Deploy contracts
+
+```bash
+npm run deploy:localhost
+```
+
+_Steps **2** and **3** can be combined into one step with command `npm run private-network-deploy` that will run local node and also deploy contracts_
+

@@ -7,4 +7,6 @@ export enum DeployTags {
   InstanceRegistry = 'instance-registry',
   MockERC20 = 'mock-erc20',
   TornadoInstance = 'tornado-instance',
+  Zapper = 'zapper',
+  IntermediaryVault = 'intermediary-vault',
 }
