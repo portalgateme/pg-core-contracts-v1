@@ -2,6 +2,7 @@ import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { network } from 'hardhat'
 import { DeployTags } from '../types/tags.enum'
+import { onlyLocalNetwork } from './utils'
 
 const deployInstanceMockERC20: DeployFunction = async ({
   deployments,
@@ -10,6 +11,8 @@ const deployInstanceMockERC20: DeployFunction = async ({
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
+
+  onlyLocalNetwork(chainId)
 
   await deploy('InstanceMockERC20', {
     from: deployer,

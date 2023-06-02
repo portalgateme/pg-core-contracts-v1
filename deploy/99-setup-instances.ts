@@ -2,6 +2,7 @@ import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
 import { DeployTags } from '../types/tags.enum'
+import { onlyLocalNetwork } from './utils'
 
 const setupInstances: DeployFunction = async ({
   deployments,
@@ -9,9 +10,7 @@ const setupInstances: DeployFunction = async ({
 }: HardhatRuntimeEnvironment) => {
   const chainId = network.config.chainId!
 
-  if (chainId != 31337) {
-    throw new Error('This script should only be used on local network')
-  }
+  onlyLocalNetwork(chainId)
 
   const instanceRegistry = await deployments.get('InstanceRegistry')
 
