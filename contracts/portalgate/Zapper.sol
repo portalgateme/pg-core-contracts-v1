@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Zapper {
+contract Zapper is Ownable {
   using SafeERC20 for IERC20;
 
   PGRouter public pgRouter;
@@ -26,9 +26,9 @@ contract Zapper {
   }
 
   /**
-    @notice .
-    @param _tornado .
-    @param _commitment .
+    @notice Once click zap in function to convert eth to kycEth tokens and deposit into relevant tc pool. The pool denomination will be the convert and deposit amount by default.
+    @param _tornado TC pool instance address
+    @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
   function zapInEth(ITornadoInstance _tornado, bytes32 _commitment) public payable {
     (
@@ -52,10 +52,9 @@ contract Zapper {
   }
 
   /**
-    @notice Check membership and authorization proofs using circom verifiers. Both proofs must be
-     generated from the same identity commitment.
-    @param _tornado The address for the deployed KeyringCredentials contract.
-    @param _commitment The unique identifier of a Policy.
+    @notice Once click zap in function to convert erc20 tokens to kycErc20 tokens and deposit into relevant tc pool. The pool denomination will be the convert and deposit amount by default.
+    @param _tornado TC pool instance address
+    @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
   function zapIn(ITornadoInstance _tornado, bytes32 _commitment) external {
 
@@ -76,6 +75,14 @@ contract Zapper {
     kycErc20.depositFor(address(this), _tornado.denomination());
     kycErc20.approve(address(pgRouter), _tornado.denomination());
     pgRouter.deposit(_tornado, _commitment, "0x");
+  }
+
+  function updatePgRouter(address _newPgRouter) external onlyOwner {
+    pgRouter = PGRouter(_newPgRouter);
+  }
+
+  function updateInstanceRegistry(address _newinstanceRegistry) external onlyOwner {
+    instanceRegistry = InstanceRegistry(_newinstanceRegistry);
   }
 
 }

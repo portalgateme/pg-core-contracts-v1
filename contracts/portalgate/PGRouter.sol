@@ -6,14 +6,14 @@ import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "./IntermediaryVault.sol";
 import "./RelayerRegistry.sol";
 import "./InstanceRegistry.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "../tornado-core/Tornado.sol";
 
-contract PGRouter {
+contract PGRouter is Initializable {
   using SafeERC20 for IERC20;
 
   event EncryptedNote(address indexed sender, bytes encryptedNote);
@@ -38,6 +38,19 @@ contract PGRouter {
     relayerRegistry = RelayerRegistry(_relayerRegistry);
   }
 
+  /**
+    @notice For proxy pattern
+  */
+  function initialize(address _governance, address _instanceRegistry, address _relayerRegistry) public initializer {
+    governance = _governance;
+    instanceRegistry = InstanceRegistry(_instanceRegistry);
+    relayerRegistry = RelayerRegistry(_relayerRegistry);
+  }
+
+  /**
+    @notice Deposit funds into the contract.
+    @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
+  */
   function deposit(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) public payable virtual {
     (
       bool isERC20,
@@ -57,6 +70,17 @@ contract PGRouter {
     emit EncryptedNote(msg.sender, _encryptedNote);
   }
 
+  /**
+    @notice Withdraw a deposit from the contract. Relayer withdrawn should have different _relayer and _recipient addresses.
+    @param _tornado TC pool instance address
+    @param _proof is a zkSNARK proof data, and input is an array of circuit public inputs `input` array
+    @param _root merkle root of all deposits in the contract
+    @param _nullifierHash hash of unique deposit nullifier to prevent double spends
+    @param _recipient the recipient address to recieve the token
+    @param _relayer the relayer address
+    @param _fee the token amount sent to relayer as fee
+    @param _refund the eth amount sent to recipient as gas
+  */
   function withdraw(
     ITornadoInstance _tornado,
     bytes calldata _proof,
