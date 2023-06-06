@@ -1,7 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
-import { DeployTags } from '../types/tags.enum'
+import { DeployTags } from './utils/tags.enum'
 
 const genContract = require('circomlib/src/mimcsponge_gencontract.js')
 

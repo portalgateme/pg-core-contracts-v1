@@ -18,9 +18,9 @@ contract PGRouter is Initializable {
 
   event EncryptedNote(address indexed sender, bytes encryptedNote);
 
-  address public immutable governance;
-  InstanceRegistry public immutable instanceRegistry;
-  RelayerRegistry public immutable relayerRegistry;
+  address public governance;
+  InstanceRegistry public instanceRegistry;
+  RelayerRegistry public relayerRegistry;
 
   modifier onlyGovernance() {
     require(msg.sender == governance, "Not authorized");

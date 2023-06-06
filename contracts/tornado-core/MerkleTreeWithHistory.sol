@@ -107,6 +107,42 @@ contract MerkleTreeWithHistory {
         return _nextIndex;
     }
 
+  function _bulkInsert(bytes32[] memory _leaves) internal {
+    uint32 insertIndex = nextIndex;
+    require(insertIndex + _leaves.length <= uint32(2)**levels, "Merkle doesn't have enough capacity to add specified leaves");
+
+    bytes32[] memory subtrees = new bytes32[](levels);
+    bool[] memory modifiedSubtrees = new bool[](levels);
+    for (uint32 j = 0; j < _leaves.length - 1; j++) {
+      uint256 index = insertIndex + j;
+      bytes32 currentLevelHash = _leaves[j];
+
+      for (uint32 i = 0; ; i++) {
+        if (index % 2 == 0) {
+          modifiedSubtrees[i] = true;
+          subtrees[i] = currentLevelHash;
+          break;
+        }
+
+        if (subtrees[i] == bytes32(0)) {
+          subtrees[i] = filledSubtrees[i];
+        }
+        currentLevelHash = hashLeftRight(hasher, subtrees[i], currentLevelHash);
+        index /= 2;
+      }
+    }
+
+    for (uint32 i = 0; i < levels; i++) {
+      // using local map to save on gas on writes if elements were not modified
+      if (modifiedSubtrees[i]) {
+        filledSubtrees[i] = subtrees[i];
+      }
+    }
+
+    nextIndex = uint32(insertIndex + _leaves.length - 1);
+    _insert(_leaves[_leaves.length - 1]);
+  }
+
     /**
 @dev Whether the root is present in the root history
   */
