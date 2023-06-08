@@ -1,9 +1,9 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers, network } from 'hardhat'
-import { DeployTags } from './utils/tags.enum'
+import { network } from 'hardhat'
+import { DeployTags, baseDeployOptions } from '../utils/deploy'
 
-const genContract = require('circomlib/src/mimcsponge_gencontract.js')
+const genContract2 = require('circomlib/src/poseidon_gencontract.js')
 
 const deployTornadoInstance: DeployFunction = async ({
   deployments,
@@ -13,39 +13,39 @@ const deployTornadoInstance: DeployFunction = async ({
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const MockERC20 = await deployments.get('InstanceMockERC20')
+  const mockERC20 = await deployments.get('InstanceMockERC20')
 
   /* INSTANCES CONFIGURATION */
   const instancesToDeploy = [
     {
       denomination: 100,
       markleTreeHeight: 20,
-      token: MockERC20.address,
+      token: mockERC20.address,
     },
     {
       denomination: 1000,
       markleTreeHeight: 20,
-      token: MockERC20.address,
+      token: mockERC20.address,
     },
   ]
 
-  const Hasher = await deploy('Hasher', {
-    contract: {
-      abi: genContract.abi,
-      bytecode: genContract.createCode('mimcsponge', 220),
-    },
-    from: deployer,
-    args: [],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
-  })
+  const baseDeployOpts = baseDeployOptions(chainId)
 
-  const Verifier = await deploy('Verifier', {
+  const verifier = await deploy('Verifier', {
     contract: 'contracts/tornado-core/Verifier.sol:Verifier',
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
+    ...baseDeployOpts,
+  })
+
+  const hasher2 = await deploy('Hasher2', {
+    contract: {
+      abi: genContract2.generateABI(2),
+      bytecode: genContract2.createCode(2),
+    },
+    from: deployer,
+    args: [],
+    ...baseDeployOpts,
   })
 
   for await (const instance of instancesToDeploy) {
@@ -53,14 +53,13 @@ const deployTornadoInstance: DeployFunction = async ({
       contract: 'ERC20Tornado',
       from: deployer,
       args: [
-        Verifier.address,
-        Hasher.address,
+        verifier.address,
+        hasher2.address,
         instance.denomination,
         instance.markleTreeHeight,
         instance.token,
       ],
-      log: true,
-      waitConfirmations: chainId === 31337 ? 1 : 6,
+      ...baseDeployOpts,
     })
   }
 }

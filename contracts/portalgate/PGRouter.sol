@@ -12,15 +12,18 @@ import "./RelayerRegistry.sol";
 import "./InstanceRegistry.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "../tornado-core/Tornado.sol";
+import "../interfaces/ITornadoTrees.sol";
 
 contract PGRouter is Initializable {
   using SafeERC20 for IERC20;
 
   event EncryptedNote(address indexed sender, bytes encryptedNote);
+  event TornadoTreesUpdated(ITornadoTrees addr);
 
   address public governance;
   InstanceRegistry public instanceRegistry;
   RelayerRegistry public relayerRegistry;
+  ITornadoTrees public tornadoTrees;
 
   modifier onlyGovernance() {
     require(msg.sender == governance, "Not authorized");
@@ -32,7 +35,8 @@ contract PGRouter is Initializable {
     _;
   }
 
-  constructor(address _governance, address _instanceRegistry, address _relayerRegistry) {
+  constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
+    tornadoTrees = ITornadoTrees(_tornadoTrees);
     governance = _governance;
     instanceRegistry = InstanceRegistry(_instanceRegistry);
     relayerRegistry = RelayerRegistry(_relayerRegistry);
@@ -41,7 +45,8 @@ contract PGRouter is Initializable {
   /**
     @notice For proxy pattern
   */
-  function initialize(address _governance, address _instanceRegistry, address _relayerRegistry) public initializer {
+  function initialize(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) public initializer {
+    tornadoTrees = ITornadoTrees(_tornadoTrees);
     governance = _governance;
     instanceRegistry = InstanceRegistry(_instanceRegistry);
     relayerRegistry = RelayerRegistry(_relayerRegistry);
@@ -67,6 +72,7 @@ contract PGRouter is Initializable {
       token.safeTransferFrom(msg.sender, address(this), _tornado.denomination());
     }
     _tornado.deposit{ value: msg.value }(_commitment);
+    tornadoTrees.registerDeposit(address(_tornado), _commitment);
     emit EncryptedNote(msg.sender, _encryptedNote);
   }
 
@@ -110,8 +116,8 @@ contract PGRouter is Initializable {
     // keyring attestation needed. TBC
 
 
-     _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
-
+    _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
+    tornadoTrees.registerWithdrawal(address(_tornado), _nullifierHash);
   }
 
   /**
@@ -128,6 +134,11 @@ contract PGRouter is Initializable {
     for (uint256 i = 0; i < _encryptedNotes.length; i++) {
       emit EncryptedNote(msg.sender, _encryptedNotes[i]);
     }
+  }
+
+  function setTornadoTreesContract(ITornadoTrees _tornadoTrees) external {
+    tornadoTrees = _tornadoTrees;
+    emit TornadoTreesUpdated(_tornadoTrees);
   }
 
   /// @dev Method to claim junk and accidentally sent tokens

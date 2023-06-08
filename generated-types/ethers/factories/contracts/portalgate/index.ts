@@ -2,8 +2,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export { InstanceRegistry__factory } from "./InstanceRegistry__factory";
+export { IntermediaryVault__factory } from "./IntermediaryVault__factory";
 export { KycERC20__factory } from "./KycERC20__factory";
 export { KycETH__factory } from "./KycETH__factory";
 export { PGRouter__factory } from "./PGRouter__factory";
 export { RelayerAggregator__factory } from "./RelayerAggregator__factory";
 export { RelayerRegistry__factory } from "./RelayerRegistry__factory";
+export { Zapper__factory } from "./Zapper__factory";

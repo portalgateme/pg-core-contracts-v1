@@ -1,8 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
-import { DeployTags } from './utils/tags.enum'
-import { onlyLocalNetwork } from './utils'
+import { DeployTags, onlyLocalNetwork } from '../utils/deploy'
 
 const setupInstances: DeployFunction = async ({
   deployments,
@@ -22,27 +21,27 @@ const setupInstances: DeployFunction = async ({
     .filter((instance) => instance !== null)
     .map((instance) => instance!.address)
 
-  const instanceRegistryContract = await ethers.getContractAt('InstanceRegistry', instanceRegistry.address)
+  const InstanceRegistry = await ethers.getContractAt('InstanceRegistry', instanceRegistry.address)
 
-  const InstanceMockERC20 = await deployments.get('InstanceMockERC20')
+  const instanceMockERC20 = await deployments.get('InstanceMockERC20')
 
   const instances = deployedInstancesAddresses.map((addr, index) => {
     return {
       addr,
       instance: {
         isERC20: true,
-        token: InstanceMockERC20.address,
+        token: instanceMockERC20.address,
         state: 1,
         uniswapPoolSwappingFee: 0,
         protocolFeePercentage: 0,
-        maxDepositAmount: 0,
+        maxDepositAmount: 100000,
       },
     }
   })
 
-  await instanceRegistryContract.initInstances(instances)
+  await InstanceRegistry.initInstances(instances)
 
-  console.log('Instances setup complete. Instances:', instances)
+  console.log('Instances setup complete.')
 }
 
 export default setupInstances

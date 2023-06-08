@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export { EnsResolve__factory } from "./EnsResolve__factory";
+export { OwnableMerkleTree__factory } from "./OwnableMerkleTree__factory";

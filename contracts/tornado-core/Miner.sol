@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/IVerifier.sol";
-//import "../interfaces/IRewardSwap.sol";
-import "./TornadoTrees.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../interfaces/IVerifier.sol";
+import "../interfaces/IRewardSwap.sol";
+import "./TornadoTrees.sol";
 
 contract Miner {
   using SafeMath for uint256;
@@ -14,7 +14,7 @@ contract Miner {
   IVerifier public rewardVerifier;
   IVerifier public withdrawVerifier;
   IVerifier public treeUpdateVerifier;
-//  IRewardSwap public immutable rewardSwap;
+//  IRewardSwap public rewardSwap;
   address public immutable governance;
   TornadoTrees public tornadoTrees;
 
@@ -88,15 +88,14 @@ contract Miner {
 
   constructor(
 //    address _rewardSwap,
-//    address _governance,
+    address _governance, // operator
     address _tornadoTrees,
     address[3] memory _verifiers,
     bytes32 _accountRoot,
     Rate[] memory _rates
   ) {
 //    rewardSwap = IRewardSwap(_rewardSwap);
-//    governance = address(_governance);
-    governance = msg.sender;
+    governance = _governance;
     tornadoTrees = TornadoTrees(_tornadoTrees);
 
     // insert empty tree root without incrementing accountCount counter
@@ -105,9 +104,9 @@ contract Miner {
     _setRates(_rates);
     // prettier-ignore
     _setVerifiers([
-      IVerifier(_verifiers[0]),
-      IVerifier(_verifiers[1]),
-      IVerifier(_verifiers[2])
+    IVerifier(_verifiers[0]),
+    IVerifier(_verifiers[1]),
+    IVerifier(_verifiers[2])
     ]);
   }
 
@@ -138,18 +137,18 @@ contract Miner {
       rewardVerifier.verifyProof(
         _proof,
         [
-          uint256(_args.rate),
-          uint256(_args.fee),
-          uint256(_args.instance),
-          uint256(_args.rewardNullifier),
-          uint256(_args.extDataHash),
-          uint256(_args.account.inputRoot),
-          uint256(_args.account.inputNullifierHash),
-          uint256(_args.account.outputRoot),
-          uint256(_args.account.outputPathIndices),
-          uint256(_args.account.outputCommitment),
-          uint256(_args.depositRoot),
-          uint256(_args.withdrawalRoot)
+        uint256(_args.rate),
+        uint256(_args.fee),
+        uint256(uint160(_args.instance)),
+        uint256(_args.rewardNullifier),
+        uint256(_args.extDataHash),
+        uint256(_args.account.inputRoot),
+        uint256(_args.account.inputNullifierHash),
+        uint256(_args.account.outputRoot),
+        uint256(_args.account.outputPathIndices),
+        uint256(_args.account.outputCommitment),
+        uint256(_args.depositRoot),
+        uint256(_args.withdrawalRoot)
         ]
       ),
       "Invalid reward proof"
@@ -158,9 +157,9 @@ contract Miner {
     accountNullifiers[_args.account.inputNullifierHash] = true;
     rewardNullifiers[_args.rewardNullifier] = true;
     insertAccountRoot(_args.account.inputRoot == getLastAccountRoot() ? _args.account.outputRoot : _treeUpdateArgs.newRoot);
-//    if (_args.fee > 0) {
+    if (_args.fee > 0) {
 //      rewardSwap.swap(_args.extData.relayer, _args.fee);
-//    }
+    }
 
     emit NewAccount(
       _args.account.outputCommitment,
@@ -187,13 +186,13 @@ contract Miner {
       withdrawVerifier.verifyProof(
         _proof,
         [
-          uint256(_args.amount),
-          uint256(_args.extDataHash),
-          uint256(_args.account.inputRoot),
-          uint256(_args.account.inputNullifierHash),
-          uint256(_args.account.outputRoot),
-          uint256(_args.account.outputPathIndices),
-          uint256(_args.account.outputCommitment)
+        uint256(_args.amount),
+        uint256(_args.extDataHash),
+        uint256(_args.account.inputRoot),
+        uint256(_args.account.inputNullifierHash),
+        uint256(_args.account.outputRoot),
+        uint256(_args.account.outputPathIndices),
+        uint256(_args.account.outputCommitment)
         ]
       ),
       "Invalid withdrawal proof"
@@ -203,13 +202,13 @@ contract Miner {
     accountNullifiers[_args.account.inputNullifierHash] = true;
     // allow submitting noop withdrawals (amount == 0)
     uint256 amount = _args.amount.sub(_args.extData.fee, "Amount should be greater than fee");
-//    if (amount > 0) {
+    if (amount > 0) {
 //      rewardSwap.swap(_args.extData.recipient, amount);
-//    }
+    }
     // Note. The relayer swap rate always will be worse than estimated
-//    if (_args.extData.fee > 0) {
+    if (_args.extData.fee > 0) {
 //      rewardSwap.swap(_args.extData.relayer, _args.extData.fee);
-//    }
+    }
 
     emit NewAccount(
       _args.account.outputCommitment,

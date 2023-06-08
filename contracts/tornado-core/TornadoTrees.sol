@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 
 import "../libs/OwnableMerkleTree.sol";
 import "../interfaces/ITornadoTrees.sol";
-import "../interfaces/IHasher2.sol";
+import "../interfaces/IHasher.sol";
 
 contract TornadoTrees is ITornadoTrees {
   OwnableMerkleTree public immutable depositTree;
   OwnableMerkleTree public immutable withdrawalTree;
-  IHasher2 public immutable hasher;
-  address public immutable tornadoProxy;
+  IHasher public immutable hasher;
+  address public pgRouter;
 
   bytes32[] public deposits;
   uint256 public lastProcessedDepositLeaf;
@@ -27,28 +27,28 @@ contract TornadoTrees is ITornadoTrees {
     uint256 block;
   }
 
-  modifier onlyTornadoProxy {
-    require(msg.sender == tornadoProxy, "Not authorized");
+  modifier onlyPgRouter {
+    require(msg.sender == pgRouter, "Not authorized");
     _;
   }
 
   constructor(
-    address _tornadoProxy,
+    address _pgRouter,
     address _hasher2,
     address _hasher3,
     uint32 _levels
   ) {
-    tornadoProxy = _tornadoProxy;
-    hasher = IHasher2(_hasher3);
+    pgRouter = _pgRouter;
+    hasher = IHasher(_hasher3);
     depositTree = new OwnableMerkleTree(_levels, IHasher(_hasher2));
     withdrawalTree = new OwnableMerkleTree(_levels, IHasher(_hasher2));
   }
 
-  function registerDeposit(address _instance, bytes32 _commitment) external override onlyTornadoProxy {
+  function registerDeposit(address _instance, bytes32 _commitment) external override onlyPgRouter {
     deposits.push(keccak256(abi.encode(_instance, _commitment, blockNumber())));
   }
 
-  function registerWithdrawal(address _instance, bytes32 _nullifier) external override onlyTornadoProxy {
+  function registerWithdrawal(address _instance, bytes32 _nullifier) external override onlyPgRouter {
     withdrawals.push(keccak256(abi.encode(_instance, _nullifier, blockNumber())));
   }
 
@@ -66,7 +66,7 @@ contract TornadoTrees is ITornadoTrees {
       bytes32 leafHash = keccak256(abi.encode(deposit.instance, deposit.hash, deposit.block));
       require(deposits[offset + i] == leafHash, "Incorrect deposit");
 
-      leaves[i] = hasher.poseidon([bytes32(deposit.instance), deposit.hash, bytes32(deposit.block)]);
+      leaves[i] = hasher.poseidon([bytes32(uint256(uint160(deposit.instance))), deposit.hash, bytes32(deposit.block)]);
       delete deposits[offset + i];
 
       emit DepositData(deposit.instance, deposit.hash, deposit.block, offset + i);
@@ -85,7 +85,7 @@ contract TornadoTrees is ITornadoTrees {
       bytes32 leafHash = keccak256(abi.encode(withdrawal.instance, withdrawal.hash, withdrawal.block));
       require(withdrawals[offset + i] == leafHash, "Incorrect withdrawal");
 
-      leaves[i] = hasher.poseidon([bytes32(uint256(withdrawal.instance)), withdrawal.hash, bytes32(withdrawal.block)]);
+      leaves[i] = hasher.poseidon([bytes32(uint256(uint160(withdrawal.instance))), withdrawal.hash, bytes32(withdrawal.block)]);
       delete withdrawals[offset + i];
 
       emit WithdrawalData(withdrawal.instance, withdrawal.hash, withdrawal.block, offset + i);

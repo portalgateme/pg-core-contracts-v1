@@ -2,8 +2,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { InstanceRegistry } from "./InstanceRegistry";
+export type { IntermediaryVault } from "./IntermediaryVault";
 export type { KycERC20 } from "./KycERC20";
 export type { KycETH } from "./KycETH";
 export type { PGRouter } from "./PGRouter";
 export type { RelayerAggregator } from "./RelayerAggregator";
 export type { RelayerRegistry } from "./RelayerRegistry";
+export type { Zapper } from "./Zapper";

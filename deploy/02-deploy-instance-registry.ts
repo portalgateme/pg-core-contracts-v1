@@ -1,7 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers, network } from 'hardhat'
-import { DeployTags } from './utils/tags.enum'
+import { network } from 'hardhat'
+import { baseDeployOptions, DeployTags } from '../utils/deploy'
 
 const deployInstanceRegistry: DeployFunction = async ({
   deployments,
@@ -11,12 +11,11 @@ const deployInstanceRegistry: DeployFunction = async ({
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const instanceRegistry = await deploy('InstanceRegistry', {
+  await deploy('InstanceRegistry', {
     from: deployer,
     args: [deployer],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
     gasLimit: 5000000,
+    ...baseDeployOptions(chainId),
   })
 }
 

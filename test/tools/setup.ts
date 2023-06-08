@@ -5,10 +5,18 @@ import {
   RelayerAggregator,
   InstanceRegistry,
   InstanceMockERC20,
+  Miner,
+  ERC20Tornado,
+  Verifier,
+  TornadoTrees,
+  RewardVerifier,
+  WithdrawVerifier,
+  TreeUpdateVerifier,
+  MockTornadoTrees,
 } from '../../generated-types/ethers'
 import { setupUser, setupUsers } from './users'
-import { deployInstances } from '../../utils/deployInstances'
 import { KycERC20, KycETH } from '../../generated-types/ethers/contracts/portalgate'
+import { Denomination } from '../../utils/instances'
 
 export const setup = deployments.createFixture(async () => {
   await deployments.fixture('test')
@@ -24,23 +32,49 @@ export const setup = deployments.createFixture(async () => {
     MockKeyringCredentials: (await ethers.getContract('MockKeyringCredentials')) as any,
     MockPolicyManager: (await ethers.getContract('MockPolicyManager')) as any,
     MockUserPolicies: (await ethers.getContract('MockUserPolicies')) as any,
+    Miner: (await ethers.getContract('Miner')) as Miner,
+    TornadoTrees: (await ethers.getContract('TornadoTrees')) as MockTornadoTrees,
+
+    Hasher2: (await ethers.getContract('Hasher2')) as any,
+    Hasher3: (await ethers.getContract('Hasher3')) as any,
+
+    Verifier: (await ethers.getContract('Verifier')) as Verifier,
+
+    RewardVerifier: (await ethers.getContract('RewardVerifier')) as RewardVerifier,
+    WithdrawVerifier: (await ethers.getContract('WithdrawVerifier')) as WithdrawVerifier,
+    TreeUpdateVerifier: (await ethers.getContract('TreeUpdateVerifier')) as TreeUpdateVerifier,
   }
 
   const { deployer } = await getNamedAccounts()
 
   const deployerSigner = await ethers.getSigner(deployer)
 
-  const instances = await deployInstances({
-    instances: [
+  const [erc20_100, erc20_1000] = (await Promise.all([
+    ethers.getContract('ERC20Tornado-100'),
+    ethers.getContract('ERC20Tornado-1000'),
+  ])) as [ERC20Tornado, ERC20Tornado]
+
+  const instances = {
+    deployed: [
       {
+        deployedInstance: erc20_100,
         isErc20: true,
-        denomination: '100',
+        denomination: '100' as Denomination,
         markleTreeHeight: 20,
-        tokenAddr: contracts.InstanceMockERC20.address, // needs to be replaced with some other token
+        tokenAddr: await erc20_100.token(),
+      },
+      {
+        deployedInstance: erc20_1000,
+        isErc20: true,
+        denomination: '1000' as Denomination,
+        markleTreeHeight: 20,
+        tokenAddr: await erc20_1000.token(),
       },
     ],
-    deployer: deployerSigner,
-  })
+
+    hasher: contracts.Hasher2,
+    verifier: contracts.Verifier,
+  }
 
   const users = await setupUsers(await getUnnamedAccounts(), contracts)
   return {

@@ -7,3 +7,4 @@ export * as libs from "./libs";
 export * as mocks from "./mocks";
 export * as portalgate from "./portalgate";
 export * as tornadoCore from "./tornado-core";
+export * as verifiers from "./verifiers";

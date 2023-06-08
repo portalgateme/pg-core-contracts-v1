@@ -198,11 +198,6 @@ const _abi = [
   {
     inputs: [
       {
-        internalType: "contract IHasher",
-        name: "_hasher",
-        type: "address",
-      },
-      {
         internalType: "bytes32",
         name: "_left",
         type: "bytes32",
@@ -221,7 +216,7 @@ const _abi = [
         type: "bytes32",
       },
     ],
-    stateMutability: "pure",
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -418,7 +413,7 @@ const _abi = [
     inputs: [
       {
         internalType: "uint256",
-        name: "i",
+        name: "",
         type: "uint256",
       },
     ],
@@ -430,7 +425,7 @@ const _abi = [
         type: "bytes32",
       },
     ],
-    stateMutability: "pure",
+    stateMutability: "view",
     type: "function",
   },
 ] as const;

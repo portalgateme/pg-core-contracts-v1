@@ -1,8 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { network } from 'hardhat'
-import { DeployTags } from './utils/tags.enum'
-import { onlyLocalNetwork } from './utils'
+import { DeployTags, onlyLocalNetwork, baseDeployOptions } from '../utils/deploy'
 
 const deployInstanceMockERC20: DeployFunction = async ({
   deployments,
@@ -17,8 +16,7 @@ const deployInstanceMockERC20: DeployFunction = async ({
   await deploy('InstanceMockERC20', {
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
+    ...baseDeployOptions(chainId),
   })
 }
 

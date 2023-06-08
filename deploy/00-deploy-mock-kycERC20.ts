@@ -1,8 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
-import { DeployTags } from './utils/tags.enum'
-import { onlyLocalNetwork } from './utils'
+import { DeployTags, onlyLocalNetwork, baseDeployOptions } from '../utils/deploy'
 
 const deployMockKycERC20: DeployFunction = async ({
   deployments,
@@ -14,29 +13,28 @@ const deployMockKycERC20: DeployFunction = async ({
 
   onlyLocalNetwork(chainId)
 
-  const MockTrustedForwarder = await deployments.get('MockTrustedForwarder')
-  const MockKeyringCredentials = await deployments.get('MockKeyringCredentials')
-  const MockPolicyManager = await deployments.get('MockPolicyManager')
-  const MockUserPolicies = await deployments.get('MockUserPolicies')
+  const mockTrustedForwarder = await deployments.get('MockTrustedForwarder')
+  const mockKeyringCredentials = await deployments.get('MockKeyringCredentials')
+  const mockPolicyManager = await deployments.get('MockPolicyManager')
+  const mockUserPolicies = await deployments.get('MockUserPolicies')
 
-  const MockERC20 = await deployments.get('InstanceMockERC20')
+  const mockERC20 = await deployments.get('InstanceMockERC20')
 
   await deploy('KycERC20', {
     contract: 'contracts/portalgate/KycERC20.sol:KycERC20',
     from: deployer,
     args: [
-      MockTrustedForwarder.address,
-      MockERC20.address,
-      MockKeyringCredentials.address,
-      MockPolicyManager.address,
-      MockUserPolicies.address,
+      mockTrustedForwarder.address,
+      mockERC20.address,
+      mockKeyringCredentials.address,
+      mockPolicyManager.address,
+      mockUserPolicies.address,
       1,
       'KycERC20',
       'KYC',
     ],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
     gasLimit: 5000000,
+    ...baseDeployOptions(chainId),
   })
 }
 

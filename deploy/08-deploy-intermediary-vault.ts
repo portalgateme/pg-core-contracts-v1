@@ -1,7 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { network } from 'hardhat'
-import { DeployTags } from './utils/tags.enum'
+import { baseDeployOptions, DeployTags } from '../utils/deploy'
 
 const deployIntermediaryVault: DeployFunction = async ({
   deployments,
@@ -11,13 +11,12 @@ const deployIntermediaryVault: DeployFunction = async ({
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const PGRouter = await deployments.get('PGRouter')
+  const pgRouter = await deployments.get('PGRouter')
 
   await deploy('IntermediaryVault', {
     from: deployer,
-    args: [PGRouter.address],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
+    args: [pgRouter.address],
+    ...baseDeployOptions(chainId),
   })
 }
 
