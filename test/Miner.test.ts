@@ -9,6 +9,7 @@ import * as fs from 'fs'
 import { getPubKey, toFixedHex } from '../utils/utils'
 import { MockTornadoTrees } from '../generated-types/ethers'
 import { deimpresonate, impresonate } from './helpers/impresonator'
+import { packEncryptedMessage } from '../utils/ap/utils'
 
 const provingKeys = {
   rewardCircuit: require('../build/circuits/Reward.json'),
@@ -25,28 +26,68 @@ const firstHardhatPublicKey = getPubKey(firstHardhatAccountPrivateKey, 'hex')
 async function registerNote(note: Note, tornadoTrees: MockTornadoTrees, pgRouterAddress: string) {
   const impresonatedPGRouter = await impresonate(pgRouterAddress)
 
-  await tornadoTrees.setBlockNumber(note.depositBlock)
-  await tornadoTrees
-    .connect(impresonatedPGRouter)
-    .registerDeposit(note.instance, utils.hexZeroPad(note.commitment.toHexString(), 32))
+  await tornadoTrees.setBlockNumber(note.depositBlock.toString())
+  await tornadoTrees.connect(impresonatedPGRouter).registerDeposit(note.instance, toFixedHex(note.commitment))
 
-  await tornadoTrees.setBlockNumber(note.withdrawalBlock)
+  await tornadoTrees.setBlockNumber(note.withdrawalBlock.toString())
   await tornadoTrees
     .connect(impresonatedPGRouter)
-    .registerWithdrawal(note.instance, utils.hexZeroPad(note.nullifierHash.toHexString(), 32))
+    .registerWithdrawal(note.instance, toFixedHex(note.nullifierHash))
 
   deimpresonate(pgRouterAddress)
+
   return {
     depositLeaf: {
       instance: note.instance,
-      hash: utils.hexZeroPad(note.commitment.toHexString(), 32),
-      block: utils.hexZeroPad(note.depositBlock.toHexString(), 32),
+      hash: toFixedHex(note.commitment),
+      block: toFixedHex(note.depositBlock),
     },
     withdrawalLeaf: {
       instance: note.instance,
-      hash: utils.hexZeroPad(note.nullifierHash.toHexString(), 32),
-      block: utils.hexZeroPad(note.withdrawalBlock.toHexString(), 32),
+      hash: toFixedHex(note.nullifierHash),
+      block: toFixedHex(note.withdrawalBlock),
     },
+  }
+}
+
+async function pre({ deployer, instances }) {
+  const [
+    {
+      deployedInstance: { address: erc20_100Address },
+    },
+  ] = instances.deployed
+
+  const note = new Note({
+    instance: erc20_100Address,
+    depositBlock: 10,
+    withdrawalBlock: 10 + 4 * 60 * 24,
+  })
+
+  const depositData = []
+  const withdrawalData = []
+
+  const PGRouterAddress = await deployer['PGRouter'].address
+
+  const { depositLeaf, withdrawalLeaf } = await registerNote(note, deployer['TornadoTrees'], PGRouterAddress)
+  depositData.push(depositLeaf)
+  withdrawalData.push(withdrawalLeaf)
+
+  await deployer['TornadoTrees'].updateRoots(depositData, withdrawalData)
+
+  const controller = new Controller({
+    contract: deployer['Miner'],
+    tornadoTreesContract: deployer['TornadoTrees'],
+    merkleTreeHeight: 20,
+    provingKeys,
+  })
+
+  await controller.init()
+
+  return {
+    note,
+    controller,
+    depositData,
+    withdrawalData,
   }
 }
 
@@ -100,69 +141,40 @@ describe.only('Miner', function () {
     it('should reward', async function () {
       const { deployer, instances } = await setup()
 
-      const [
-        {
-          deployedInstance: { address: erc20_100Address },
-        },
-      ] = instances.deployed
-
-      const note = new Note({
-        instance: erc20_100Address,
-        depositBlock: 10,
-        withdrawalBlock: 10 + 4 * 60 * 24,
-      })
-
-      const depositData = []
-      const withdrawalData = []
-
-      const PGRouterAddress = await deployer['PGRouter'].address
-
-      const { depositLeaf, withdrawalLeaf } = await registerNote(
-        note,
-        deployer['TornadoTrees'],
-        PGRouterAddress,
-      )
-      depositData.push(depositLeaf)
-      withdrawalData.push(withdrawalLeaf)
-
-      await deployer['TornadoTrees'].updateRoots(depositData, withdrawalData)
-
-      const controller = new Controller({
-        contract: deployer['Miner'],
-        tornadoTreesContract: deployer['TornadoTrees'],
-        merkleTreeHeight: 20,
-        provingKeys,
-      })
+      const { note, controller } = await pre({ deployer, instances })
 
       const zeroAccount = new Account()
       const accountCount = await deployer['Miner'].accountCount()
 
-      await controller.init()
-
       expect(zeroAccount.amount).to.equal(0)
 
-      const rewardNullifierBefore = await deployer['Miner'].rewardNullifiers(
-        utils.hexZeroPad(note.rewardNullifier.toHexString(), 32),
-      )
+      const rewardNullifierBefore = await deployer['Miner'].rewardNullifiers(toFixedHex(note.rewardNullifier))
       expect(rewardNullifierBefore).to.equal(false)
 
       const accountNullifierBefore = await deployer['Miner'].accountNullifiers(
-        utils.hexZeroPad(zeroAccount.nullifier.toHexString(), 32),
+        toFixedHex(zeroAccount.nullifier),
       )
       expect(accountNullifierBefore).to.equal(false)
 
-      const { proof, args, account } = await controller.reward({
+      const { proof, args, account, encryptedAccount } = await controller.reward({
         account: zeroAccount,
         note,
         publicKey: firstHardhatPublicKey,
       })
 
-      const tx = await deployer['Miner'][
+      const tx = deployer['Miner'][
         'reward(bytes,(uint256,uint256,address,bytes32,bytes32,bytes32,bytes32,(address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)))'
       ](proof, args)
 
-      console.log('reward gas used', (await tx.wait()).gasUsed.toNumber())
-      console.log('tx', await tx.wait())
+      await expect(tx).to.emit(deployer['Miner'], 'NewAccount')
+
+      const receipt = await tx
+
+      const event = ((await receipt.wait()) as any).events[0]
+
+      expect(event.args.encryptedAccount).to.equal(encryptedAccount)
+      expect(event.args.commitment).to.equal(toFixedHex(account.commitment))
+      expect(event.args.nullifier).to.equal(toFixedHex(zeroAccount.nullifierHash))
     })
   })
 })

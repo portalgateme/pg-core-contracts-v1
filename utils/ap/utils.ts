@@ -1,6 +1,6 @@
 import { RewardExtData, WithdrawExtData } from './types'
 import { toFixedHex } from '../utils'
-import { soliditySha3 } from 'web3-utils'
+import { soliditySha3, toBN } from 'web3-utils'
 import Web3 from 'web3'
 import Decimal from 'decimal.js'
 
@@ -74,22 +74,22 @@ export function bitsToNumber(bits) {
 
 // a = floor(10**18 * e^(-0.0000000001 * amount))
 // yield = BalBefore - (BalBefore * a)/10**18
-export function tornadoFormula({ _balance, _amount, _poolWeight = 1e10 }) {
+export function tornadoFormula({ balance, amount, poolWeight = 1e10 }) {
   const decimals = new Decimal(10 ** 18)
-  let poolWeight = new Decimal(_poolWeight.toString())
-  let balance = new Decimal(_balance.toString())
-  let amount = new Decimal(_amount.toString())
+  balance = new Decimal(balance.toString())
+  amount = new Decimal(amount.toString())
+  poolWeight = new Decimal(poolWeight.toString())
 
   const power = amount.div(poolWeight).negated()
   const exponent = Decimal.exp(power).mul(decimals)
   const newBalance = balance.mul(exponent).div(decimals)
-  return BigNumber.from(balance.sub(newBalance).toFixed(0))
+  return toBN(balance.sub(newBalance).toFixed(0))
 }
 
-export function reverseTornadoFormula({ _balance, _tokens, _poolWeight = 1e10 }) {
-  let balance = new Decimal(_balance.toString())
-  let tokens = new Decimal(_tokens.toString())
-  let poolWeight = new Decimal(_poolWeight.toString())
+export function reverseTornadoFormula({ balance, tokens, poolWeight = 1e10 }) {
+  balance = new Decimal(balance.toString())
+  tokens = new Decimal(tokens.toString())
+  poolWeight = new Decimal(poolWeight.toString())
 
-  return BigNumber.from(poolWeight.times(Decimal.ln(balance.div(balance.sub(tokens)))).toFixed(0))
+  return toBN(poolWeight.times(Decimal.ln(balance.div(balance.sub(tokens)))).toFixed(0))
 }

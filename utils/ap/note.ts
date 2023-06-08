@@ -1,34 +1,31 @@
 import { BigNumber, utils } from 'ethers'
 import { randomBytes } from 'crypto'
-import { pedersenHashBuffer, poseidonHash } from '../utils'
-
-function randomBN(size: number): BigNumber {
-  const buf = randomBytes(size)
-  return BigNumber.from(`0x${buf.toString('hex')}`)
-}
+import { pedersenHashBuffer, poseidonHash, randomBN } from '../utils'
+import { BN } from 'ethereumjs-util'
+import { toBN } from 'web3-utils'
 
 export interface INoteConstructor {
-  secret?: BigNumber
-  nullifier?: BigNumber
+  secret?: string
+  nullifier?: string
   netId?: string
   amount?: string
   currency?: string
-  depositBlock?: string | number | BigNumber
-  withdrawalBlock?: string | number | BigNumber
+  depositBlock?: string
+  withdrawalBlock?: string
   instance?: any
 }
 
 class Note {
-  public secret: BigNumber
-  public nullifier: BigNumber
-  public commitment: BigNumber
-  public nullifierHash: BigNumber
-  public rewardNullifier: BigNumber
+  public secret: BN
+  public nullifier: BN
+  public commitment: BN
+  public nullifierHash: BN
+  public rewardNullifier: BN
   public netId: string
   public amount: string
   public currency: string
-  public depositBlock: BigNumber
-  public withdrawalBlock: BigNumber
+  public depositBlock: BN
+  public withdrawalBlock: BN
   public instance: any
 
   constructor({
@@ -41,39 +38,29 @@ class Note {
     withdrawalBlock,
     instance,
   }: INoteConstructor = {}) {
-    this.secret = secret ? BigNumber.from(secret) : randomBN(31)
-    this.nullifier = nullifier ? BigNumber.from(nullifier) : randomBN(31)
-
-    const nullifierBytes = utils.hexDataSlice(this.nullifier.toHexString(), 2)
-    const secretBytes = utils.hexDataSlice(this.secret.toHexString(), 2)
+    this.secret = secret ? toBN(secret) : randomBN(31)
+    this.nullifier = nullifier ? toBN(nullifier) : randomBN(31)
 
     this.commitment = pedersenHashBuffer(
-      Buffer.concat([
-        Buffer.from(utils.hexZeroPad(nullifierBytes, 31)),
-        Buffer.from(utils.hexZeroPad(secretBytes, 31)),
-      ]),
+      Buffer.concat([this.nullifier.toBuffer('le', 31), this.secret.toBuffer('le', 31)]),
     )
-    this.nullifierHash = pedersenHashBuffer(Buffer.from(utils.hexZeroPad(nullifierBytes, 31)))
-    this.rewardNullifier = poseidonHash([this.nullifier.toHexString()])
+    this.nullifierHash = pedersenHashBuffer(this.nullifier.toBuffer('le', 31))
+    this.rewardNullifier = poseidonHash([this.nullifier])
 
-    this.netId = netId || ''
-    this.amount = amount || ''
-    this.currency = currency || ''
-    this.depositBlock = BigNumber.from(depositBlock || 0)
-    this.withdrawalBlock = BigNumber.from(withdrawalBlock || 0)
+    this.netId = netId
+    this.amount = amount
+    this.currency = currency
+    this.depositBlock = toBN(depositBlock)
+    this.withdrawalBlock = toBN(withdrawalBlock)
     this.instance = instance
   }
 
-  static fromString(
-    note: string,
-    instance: string,
-    depositBlock: string | number,
-    withdrawalBlock: string | number,
-  ): Note {
-    const [, currency, amount, netId, noteHex] = note.split('-')
-    const noteBuff = Buffer.from(noteHex.slice(2), 'hex')
-    const nullifier = BigNumber.from(`0x${noteBuff.slice(0, 31).toString('hex')}`)
-    const secret = BigNumber.from(`0x${noteBuff.slice(31).toString('hex')}`)
+  static fromString(note, instance, depositBlock, withdrawalBlock) {
+    note = note.split('-')
+    const [, currency, amount, netId] = note
+    const hexNote = note[4].slice(2)
+    const nullifier = new BN(hexNote.slice(0, 62), 16, 'le')
+    const secret = new BN(hexNote.slice(62), 16, 'le')
     return new Note({
       secret,
       nullifier,

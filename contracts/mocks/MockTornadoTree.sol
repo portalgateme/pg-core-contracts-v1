@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 
 import "../tornado-core/TornadoTrees.sol";
 
+import "hardhat/console.sol";
+
 contract MockTornadoTrees is TornadoTrees {
   uint256 public timestamp;
   uint256 public currentBlock;
@@ -16,6 +18,7 @@ contract MockTornadoTrees is TornadoTrees {
   ) TornadoTrees(_pgRouter, _hasher2, _hasher3, _levels) {}
 
   function setBlockNumber(uint256 _blockNumber) public {
+    console.log("setBlockNumber", _blockNumber);
     currentBlock = _blockNumber;
   }
 

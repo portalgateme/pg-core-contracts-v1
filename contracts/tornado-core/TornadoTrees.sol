@@ -6,6 +6,8 @@ import "../libs/OwnableMerkleTree.sol";
 import "../interfaces/ITornadoTrees.sol";
 import "../interfaces/IHasher.sol";
 
+import "hardhat/console.sol";
+
 contract TornadoTrees is ITornadoTrees {
   OwnableMerkleTree public immutable depositTree;
   OwnableMerkleTree public immutable withdrawalTree;
@@ -45,6 +47,7 @@ contract TornadoTrees is ITornadoTrees {
   }
 
   function registerDeposit(address _instance, bytes32 _commitment) external override onlyPgRouter {
+    console.log("registerDeposit CONTRACT", blockNumber());
     deposits.push(keccak256(abi.encode(_instance, _commitment, blockNumber())));
   }
 

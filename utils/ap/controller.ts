@@ -7,10 +7,13 @@ import * as websnarkUtils from 'websnark/src/utils'
 import buildGroth16 from 'websnark/src/groth16'
 import Web3 from 'web3'
 import { bitsToNumber, getExtRewardArgsHash, getExtWithdrawArgsHash, packEncryptedMessage } from './utils'
-import { toFixedHex, poseidonHash, poseidonHash2 } from '../utils'
+import { toFixedHex, poseidonHash, poseidonHash2, ethersBNtoWeb3BN } from '../utils'
 import Account from './account'
 import { RewardArgs } from './types'
 import Note from './note'
+import { toBN } from 'web3-utils'
+
+const unstringifyBigInts2 = require('snarkjs/src/stringifybigint').unstringifyBigInts
 
 const web3 = new Web3()
 
@@ -105,11 +108,11 @@ class Controller {
         publicKey,
         fee,
         relayer,
-        accountCommitments: accountCommitments?.slice(),
+        accountCommitments: accountCommitments.slice(),
       })
       proofs.push(proof)
       lastAccount = proof.account
-      accountCommitments?.push(lastAccount.commitment)
+      accountCommitments.push(lastAccount.commitment)
     }
     const args = proofs.map((x) => web3.eth.abi.encodeParameters(['bytes', RewardArgs], [x.proof, x.args]))
     return { proofs, args }
@@ -134,10 +137,7 @@ class Controller {
     publicKey,
     fee = 0,
     relayer = 0,
-    rate = null,
     accountCommitments = null,
-    depositDataEvents = null,
-    withdrawalDataEvents = null,
   }: {
     account: Account
     note: Note
@@ -145,27 +145,19 @@ class Controller {
     fee?: number
     relayer?: number
     rate?: number | null
-    accountCommitments?: BigNumber[] | null
-    depositDataEvents?: any[] | null
-    withdrawalDataEvents?: any[] | null
+    accountCommitments?: any
   }) {
-    rate = rate || (await this.contract.rates(note.instance))
+    const rate = await this.contract.rates(note.instance)
 
     const newAmount = account.amount.add(
-      BigNumber.from(rate)
-        .mul(BigNumber.from(note.withdrawalBlock).sub(BigNumber.from(note.depositBlock)))
-        .sub(BigNumber.from(fee)),
+      toBN(rate)
+        .mul(toBN(note.withdrawalBlock).sub(toBN(note.depositBlock)))
+        .sub(toBN(fee)),
     )
     const newAccount = new Account({ amount: newAmount })
 
-    depositDataEvents = depositDataEvents || (await this._fetchDepositDataEvents())
-    const depositLeaves = depositDataEvents.map((x) => {
-      if (x.poseidon) {
-        return x.poseidon
-      }
-
-      return poseidonHash([x.instance, x.hash, x.block])
-    })
+    const depositDataEvents = await this._fetchDepositDataEvents()
+    const depositLeaves = depositDataEvents.map((x) => poseidonHash([x.instance, x.hash, x.block]))
     const depositTree = new MerkleTree(this.merkleTreeHeight, depositLeaves, { hashFunction: poseidonHash2 })
     const depositItem = depositDataEvents.filter((x) => x.hash === toFixedHex(note.commitment))
     if (depositItem.length === 0) {
@@ -173,14 +165,8 @@ class Controller {
     }
     const depositPath = depositTree.path(depositItem[0].index)
 
-    withdrawalDataEvents = withdrawalDataEvents || (await this._fetchWithdrawalDataEvents())
-    const withdrawalLeaves = withdrawalDataEvents.map((x) => {
-      if (x.poseidon) {
-        return x.poseidon
-      }
-
-      return poseidonHash([x.instance, x.hash, x.block])
-    })
+    const withdrawalDataEvents = await this._fetchWithdrawalDataEvents()
+    const withdrawalLeaves = withdrawalDataEvents.map((x) => poseidonHash([x.instance, x.hash, x.block]))
     const withdrawalTree = new MerkleTree(this.merkleTreeHeight, withdrawalLeaves, {
       hashFunction: poseidonHash2,
     })
@@ -198,9 +184,7 @@ class Controller {
       pathElements: new Array(this.merkleTreeHeight).fill(0),
       pathIndices: new Array(this.merkleTreeHeight).fill(0),
     }
-    const accountIndex = accountTree.indexOf(account.commitment, (a: any, b: any) =>
-      BigNumber.from(a).eq(BigNumber.from(b)),
-    )
+    const accountIndex = accountTree.indexOf(account.commitment, (a, b) => a.eq(b))
     const accountPath = accountIndex !== -1 ? accountTree.path(accountIndex) : zeroAccount
     const accountTreeUpdate = this._updateTree(accountTree, newAccount.commitment)
 
@@ -277,6 +261,7 @@ class Controller {
       proof,
       args,
       account: newAccount,
+      encryptedAccount,
     }
   }
 
@@ -287,7 +272,6 @@ class Controller {
     publicKey,
     fee = 0,
     relayer = 0,
-    accountCommitments = null,
   }: {
     account: Account
     amount: string
@@ -295,18 +279,15 @@ class Controller {
     publicKey: string
     fee?: number
     relayer?: number
-    accountCommitments?: BigNumber[] | null
   }) {
-    const newAmount = account.amount.sub(BigNumber.from(amount)).sub(BigNumber.from(fee))
+    const newAmount = account.amount.sub(toBN(amount)).sub(toBN(fee))
     const newAccount = new Account({ amount: newAmount })
 
-    accountCommitments = accountCommitments || (await this._fetchAccountCommitments())
+    const accountCommitments = await this._fetchAccountCommitments()
     const accountTree = new MerkleTree(this.merkleTreeHeight, accountCommitments, {
       hashFunction: poseidonHash2,
     })
-    const accountIndex = accountTree.indexOf(account.commitment, (a: any, b: any) =>
-      BigNumber.from(a).eq(BigNumber.from(b)),
-    )
+    const accountIndex = accountTree.indexOf(account.commitment, (a, b) => a.eq(b))
     if (accountIndex === -1) {
       throw new Error('The accounts tree does not contain such account commitment')
     }
@@ -317,7 +298,7 @@ class Controller {
     const extDataHash = getExtWithdrawArgsHash({ fee, recipient, relayer, encryptedAccount })
 
     const input = {
-      amount: BigNumber.from(amount).add(BigNumber.from(fee)),
+      amount: toBN(amount).add(toBN(fee)),
       extDataHash,
 
       inputAmount: account.amount,
