@@ -7,10 +7,9 @@
 1. Install dependencies
 
 ```bash
-npm install
+yarn
 ```
-
-If you are facing dependency issues, try to install dependencies with `npm install --legacy-peer-deps` or `npm install --force`.
+Its strongly recommended to use `yarn` instead of `npm` for package management.
 
 2. Prepare environment variables
 
@@ -23,13 +22,13 @@ Make sure to add all the required environment variables.
 3. Compile contracts
 
 ```bash
-npm run compile
+yarn compile
 ```
 
 4. Run tests
 
 ```bash
-npm run test
+yarn test
 ```
 
 ---
@@ -41,13 +40,13 @@ npm run test
 1. Compile contracts
 
 ```bash
-npm run compile
+yarn compile
 ```
 
 2. Deploy contracts
 
 ```bash
-npm run deploy:goerli
+yarn deploy:goerli
 ```
 
 _Contracts may already be deployed on Goerli testnet. If you want to deploy them again, make sure to delete `deployments` folder._
@@ -55,7 +54,7 @@ _Contracts may already be deployed on Goerli testnet. If you want to deploy them
 3. Verify contracts
 
 ```bash
-npm run verify:goerli
+yarn verify:goerli
 ```
 
 ### Local network
@@ -63,20 +62,20 @@ npm run verify:goerli
 1. Compile contracts
 
 ```bash
-npm run compile
+yarn compile
 ```
 
 2. Run local network
 
 ```bash
-npm run private-network
+yarn private-network
 ```
 
 3. Deploy contracts
 
 ```bash
-npm run deploy:localhost
+yarn deploy:localhost
 ```
 
-_Steps **2** and **3** can be combined into one step with command `npm run private-network-deploy` that will run local node and also deploy contracts_
+_Steps **2** and **3** can be combined into one step with command `yarn private-network-deploy` that will run local node and also deploy contracts_
 

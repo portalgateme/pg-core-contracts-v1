@@ -10,8 +10,8 @@ export interface INoteConstructor {
   netId?: string
   amount?: string
   currency?: string
-  depositBlock?: string
-  withdrawalBlock?: string
+  depositBlock?: number
+  withdrawalBlock?: number
   instance?: any
 }
 

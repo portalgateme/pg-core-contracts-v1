@@ -4,9 +4,6 @@ import { soliditySha3, toBN } from 'web3-utils'
 import Web3 from 'web3'
 import Decimal from 'decimal.js'
 
-import { babyJub, pedersenHash, mimcsponge, poseidon } from 'circomlib'
-import { BigNumber } from 'ethers'
-
 const web3 = new Web3()
 
 export function getExtRewardArgsHash({ relayer, encryptedAccount }) {

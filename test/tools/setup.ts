@@ -85,3 +85,5 @@ export const setup = deployments.createFixture(async () => {
     instances,
   }
 })
+
+export type SetupFunction = () => ReturnType<typeof setup>

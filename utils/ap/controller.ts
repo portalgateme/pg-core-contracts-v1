@@ -12,8 +12,7 @@ import Account from './account'
 import { RewardArgs } from './types'
 import Note from './note'
 import { toBN } from 'web3-utils'
-
-const unstringifyBigInts2 = require('snarkjs/src/stringifybigint').unstringifyBigInts
+import { BN } from 'ethereumjs-util'
 
 const web3 = new Web3()
 
@@ -43,7 +42,7 @@ class Controller {
     this.groth16 = await buildGroth16()
   }
 
-  async _fetchAccountCommitments(): Promise<BigNumber[] | null> {
+  async _fetchAccountCommitments(): Promise<BN[] | null> {
     const filter = this.contract.filters.NewAccount()
     const events = await this.contract.queryFilter(filter)
     return events
@@ -108,11 +107,11 @@ class Controller {
         publicKey,
         fee,
         relayer,
-        accountCommitments: accountCommitments.slice(),
+        accountCommitments: accountCommitments?.slice(),
       })
       proofs.push(proof)
       lastAccount = proof.account
-      accountCommitments.push(lastAccount.commitment)
+      accountCommitments?.push(lastAccount.commitment)
     }
     const args = proofs.map((x) => web3.eth.abi.encodeParameters(['bytes', RewardArgs], [x.proof, x.args]))
     return { proofs, args }
@@ -151,6 +150,7 @@ class Controller {
 
     const newAmount = account.amount.add(
       toBN(rate)
+        // @ts-ignore
         .mul(toBN(note.withdrawalBlock).sub(toBN(note.depositBlock)))
         .sub(toBN(fee)),
     )
@@ -184,7 +184,7 @@ class Controller {
       pathElements: new Array(this.merkleTreeHeight).fill(0),
       pathIndices: new Array(this.merkleTreeHeight).fill(0),
     }
-    const accountIndex = accountTree.indexOf(account.commitment, (a, b) => a.eq(b))
+    const accountIndex = accountTree.indexOf(account.commitment, (a: any, b: any) => a.eq(b))
     const accountPath = accountIndex !== -1 ? accountTree.path(accountIndex) : zeroAccount
     const accountTreeUpdate = this._updateTree(accountTree, newAccount.commitment)
 
@@ -287,7 +287,7 @@ class Controller {
     const accountTree = new MerkleTree(this.merkleTreeHeight, accountCommitments, {
       hashFunction: poseidonHash2,
     })
-    const accountIndex = accountTree.indexOf(account.commitment, (a, b) => a.eq(b))
+    const accountIndex = accountTree.indexOf(account.commitment, (a: any, b: any) => a.eq(b))
     if (accountIndex === -1) {
       throw new Error('The accounts tree does not contain such account commitment')
     }
@@ -351,7 +351,7 @@ class Controller {
     }
   }
 
-  async treeUpdate(commitment: BigNumber, accountTree = null) {
+  async treeUpdate(commitment: BN, accountTree = null) {
     if (!accountTree) {
       const accountCommitments = await this._fetchAccountCommitments()
       accountTree = new MerkleTree(this.merkleTreeHeight, accountCommitments, {

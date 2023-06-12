@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { setup } from './tools/setup'
+import { setup, SetupFunction } from './tools/setup'
 import { generateTree } from '../utils/merkleTree'
 import Account from '../utils/ap/account'
 import Note from '../utils/ap/note'
@@ -10,6 +10,7 @@ import { getPubKey, toFixedHex } from '../utils/utils'
 import { MockTornadoTrees } from '../generated-types/ethers'
 import { deimpresonate, impresonate } from './helpers/impresonator'
 import { packEncryptedMessage } from '../utils/ap/utils'
+import { toBN } from 'web3-utils'
 
 const provingKeys = {
   rewardCircuit: require('../build/circuits/Reward.json'),
@@ -50,7 +51,9 @@ async function registerNote(note: Note, tornadoTrees: MockTornadoTrees, pgRouter
   }
 }
 
-async function pre({ deployer, instances }) {
+type PreFunctionParameter = ReturnType<SetupFunction> extends Promise<infer U> ? U : never
+
+async function pre({ deployer, instances }: Pick<PreFunctionParameter, 'deployer' | 'instances'>) {
   const [
     {
       deployedInstance: { address: erc20_100Address },
@@ -63,16 +66,46 @@ async function pre({ deployer, instances }) {
     withdrawalBlock: 10 + 4 * 60 * 24,
   })
 
+  const note2 = new Note({
+    instance: erc20_100Address,
+    depositBlock: 10,
+    withdrawalBlock: 10 + 2 * 4 * 60 * 24,
+  })
+
+  const note3 = new Note({
+    instance: erc20_100Address,
+    depositBlock: 10,
+    withdrawalBlock: 10 + 3 * 4 * 60 * 24,
+  })
+
+  const notes = [note, note2, note3]
+
   const depositData = []
   const withdrawalData = []
 
   const PGRouterAddress = await deployer['PGRouter'].address
 
-  const { depositLeaf, withdrawalLeaf } = await registerNote(note, deployer['TornadoTrees'], PGRouterAddress)
-  depositData.push(depositLeaf)
-  withdrawalData.push(withdrawalLeaf)
+  for (const note of notes) {
+    const { depositLeaf, withdrawalLeaf } = await registerNote(
+      note,
+      deployer['TornadoTrees'],
+      PGRouterAddress,
+    )
+    withdrawalData.push(withdrawalLeaf)
+    depositData.push(depositLeaf)
+  }
 
   await deployer['TornadoTrees'].updateRoots(depositData, withdrawalData)
+
+  const minerReward =
+    deployer['Miner'][
+      'reward(bytes,(uint256,uint256,address,bytes32,bytes32,bytes32,bytes32,(address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)))'
+    ]
+
+  const minerReward4 =
+    deployer['Miner'][
+      'reward(bytes,(uint256,uint256,address,bytes32,bytes32,bytes32,bytes32,(address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)),bytes,(bytes32,bytes32,bytes32,uint256))'
+    ]
 
   const controller = new Controller({
     contract: deployer['Miner'],
@@ -85,13 +118,17 @@ async function pre({ deployer, instances }) {
 
   return {
     note,
+    note2,
+    note3,
     controller,
     depositData,
     withdrawalData,
+    minerReward,
+    minerReward4,
   }
 }
 
-describe.only('Miner', function () {
+describe('Miner', function () {
   describe('Deployment', function () {
     it('Should deploy Miner', async function () {
       const { deployer } = await setup()
@@ -137,7 +174,7 @@ describe.only('Miner', function () {
     })
   })
 
-  describe.only('reward', function () {
+  describe('reward', function () {
     it('should reward', async function () {
       const { deployer, instances } = await setup()
 
@@ -175,6 +212,404 @@ describe.only('Miner', function () {
       expect(event.args.encryptedAccount).to.equal(encryptedAccount)
       expect(event.args.commitment).to.equal(toFixedHex(account.commitment))
       expect(event.args.nullifier).to.equal(toFixedHex(zeroAccount.nullifierHash))
+    })
+
+    it('should use fallback with outdated tree', async function () {
+      const { deployer, instances } = await setup()
+
+      const { note, controller, note2, minerReward4, minerReward } = await pre({ deployer, instances })
+
+      const { proof, args, account } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const tmp = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await minerReward(tmp.proof, tmp.args)
+
+      await expect(minerReward(proof, args)).to.be.revertedWith('Outdated account merkle root')
+
+      const update = await controller.treeUpdate(account.commitment)
+      await minerReward4(proof, args, update.proof, update.args)
+
+      const rootAfter = await deployer['Miner'].getLastAccountRoot()
+      expect(rootAfter).to.equal(update.args.newRoot)
+    })
+
+    it('should reject with incorrect insert position', async function () {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      const tmp = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+      await minerReward(tmp.proof, tmp.args)
+
+      const { proof, args } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+      const malformedArgs = JSON.parse(JSON.stringify(args))
+
+      let fakeIndex = toBN(args.account.outputPathIndices).sub(toBN('1'))
+      malformedArgs.account.outputPathIndices = toFixedHex(fakeIndex)
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Incorrect account insert index')
+
+      fakeIndex = toBN(args.account.outputPathIndices).add(toBN('1'))
+      malformedArgs.account.outputPathIndices = toFixedHex(fakeIndex)
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Incorrect account insert index')
+
+      fakeIndex = toBN(args.account.outputPathIndices).add(toBN('10000000000000000000000000'))
+      malformedArgs.account.outputPathIndices = toFixedHex(fakeIndex)
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Incorrect account insert index')
+    })
+
+    it('should reject with incorrect external data hash', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      const { proof, args } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+      const malformedArgs = JSON.parse(JSON.stringify(args))
+
+      malformedArgs.extDataHash = toFixedHex('0xdeadbeef')
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Incorrect external data hash')
+
+      malformedArgs.extDataHash = toFixedHex('0x00')
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Incorrect external data hash')
+    })
+
+    it('should prevent fee overflow', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      const { proof, args } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+      const malformedArgs = JSON.parse(JSON.stringify(args))
+
+      malformedArgs.fee = toFixedHex(toBN(2).pow(toBN(248)))
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Fee value out of range')
+
+      malformedArgs.fee = toFixedHex(toBN(2).pow(toBN(256)).sub(toBN(1)))
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Fee value out of range')
+    })
+
+    it('should reject with invalid reward rate', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      const { proof, args } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+      const malformedArgs = JSON.parse(JSON.stringify(args))
+
+      malformedArgs.instance = deployer['Miner'].address
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Invalid reward rate')
+
+      malformedArgs.rate = toFixedHex(toBN(9999999))
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Invalid reward rate')
+
+      malformedArgs.instance = toFixedHex('0x00', 20)
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Invalid reward rate')
+
+      const anotherInstance = instances.deployed[1].deployedInstance.address
+      const rate = toBN(1000)
+      await deployer['Miner'].setRates([{ instance: anotherInstance, value: rate.toString() }])
+
+      malformedArgs.instance = anotherInstance
+      malformedArgs.rate = toFixedHex(rate)
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Invalid reward proof')
+    })
+
+    it('should reject for double spend', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      let { proof, args } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await expect(minerReward(proof, args)).to.be.fulfilled
+      ;({ proof, args } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      }))
+
+      await expect(minerReward(proof, args)).to.be.revertedWith('Reward has been already spent')
+    })
+
+    it('should reject for invalid proof', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      const claim1 = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+      const claim2 = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await expect(minerReward(claim2.proof, claim1.args)).to.be.revertedWith('Invalid reward proof')
+    })
+
+    it('should reject for invalid account root', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2 } = await pre({ deployer, instances })
+
+      const account1 = new Account()
+      const account2 = new Account()
+      const account3 = new Account()
+
+      const fakeTree = generateTree(20, [account1.commitment, account2.commitment, account3.commitment])
+
+      const { proof, args } = await controller.reward({
+        account: account1,
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+      const malformedArgs = JSON.parse(JSON.stringify(args))
+      malformedArgs.account.inputRoot = toFixedHex(fakeTree.root())
+
+      await expect(minerReward(proof, malformedArgs)).to.be.revertedWith('Invalid account root')
+    })
+
+    it('should reject with outdated account root (treeUpdate proof validation)', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2, note3 } = await pre({ deployer, instances })
+
+      const { proof, args, account } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const tmp = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await minerReward(tmp.proof, tmp.args)
+
+      await expect(minerReward(proof, args)).to.be.revertedWith('Outdated account merkle root')
+
+      const update = await controller.treeUpdate(account.commitment)
+
+      const tmp2 = await controller.reward({
+        account: new Account(),
+        note: note3,
+        publicKey: firstHardhatPublicKey,
+      })
+      await minerReward(tmp2.proof, tmp2.args)
+
+      await expect(minerReward4(proof, args, update.proof, update.args)).to.be.revertedWith(
+        'Outdated tree update merkle root',
+      )
+    })
+
+    it('should reject for incorrect commitment (treeUpdate proof validation)', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2, note3 } = await pre({ deployer, instances })
+
+      const claim = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const tmp = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+      await minerReward(tmp.proof, tmp.args)
+
+      await expect(minerReward(claim.proof, claim.args)).to.be.revertedWith('Outdated account merkle root')
+      const anotherAccount = new Account()
+      const update = await controller.treeUpdate(anotherAccount.commitment)
+
+      await expect(minerReward4(claim.proof, claim.args, update.proof, update.args)).to.be.revertedWith(
+        'Incorrect commitment inserted',
+      )
+
+      claim.args.account.outputCommitment = update.args.leaf
+
+      await expect(minerReward4(claim.proof, claim.args, update.proof, update.args)).to.be.revertedWith(
+        'Invalid reward proof',
+      )
+    })
+
+    it('should reject for incorrect account insert index (treeUpdate proof validation)', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2, note3 } = await pre({ deployer, instances })
+
+      const { proof, args, account } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const tmp = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+      await minerReward(tmp.proof, tmp.args)
+
+      await expect(minerReward(proof, args)).to.be.revertedWith('Outdated account merkle root')
+
+      const update = await controller.treeUpdate(account.commitment)
+      const malformedArgs = JSON.parse(JSON.stringify(update.args))
+
+      let fakeIndex = toBN(update.args.pathIndices).sub(toBN('1'))
+      malformedArgs.pathIndices = toFixedHex(fakeIndex)
+
+      await expect(minerReward4(proof, args, update.proof, malformedArgs)).to.be.revertedWith(
+        'Incorrect account insert index',
+      )
+    })
+
+    it('should reject for invalid tree update proof (treeUpdate proof validation)', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2, note3 } = await pre({ deployer, instances })
+
+      const { proof, args, account } = await controller.reward({
+        account: new Account(),
+        note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const tmp = await controller.reward({
+        account: new Account(),
+        note: note2,
+        publicKey: firstHardhatPublicKey,
+      })
+      await minerReward(tmp.proof, tmp.args)
+
+      await expect(minerReward(proof, args)).to.be.revertedWith('Outdated account merkle root')
+
+      const update = await controller.treeUpdate(account.commitment)
+
+      await expect(minerReward4(proof, args, tmp.proof, update.args)).to.be.revertedWith(
+        'Invalid tree update proof',
+      )
+    })
+
+    it('should work with outdated deposit or withdrawal merkle root', async () => {
+      const { deployer, instances } = await setup()
+      const { note, controller, minerReward4, minerReward, note2, note3 } = await pre({ deployer, instances })
+      const [erc20_100, erc20_1000] = instances.deployed
+
+      const PGRouterAddress = deployer['PGRouter'].address
+
+      const note0 = new Note({
+        instance: erc20_100.deployedInstance.address,
+        depositBlock: 10,
+        withdrawalBlock: 55,
+      })
+      const note4 = new Note({
+        instance: erc20_100.deployedInstance.address,
+        depositBlock: 10,
+        withdrawalBlock: 55,
+      })
+      const note5 = new Note({
+        instance: erc20_100.deployedInstance.address,
+        depositBlock: 10,
+        withdrawalBlock: 65,
+      })
+
+      const claim1 = await controller.reward({
+        account: new Account(),
+        note: note3,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const note4Leaves = await registerNote(note4, deployer['TornadoTrees'], PGRouterAddress)
+      await deployer['TornadoTrees'].updateRoots([note4Leaves.depositLeaf], [note4Leaves.withdrawalLeaf])
+
+      const claim2 = await controller.reward({
+        account: new Account(),
+        note: note4,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      for (let i = 0; i < 9; i++) {
+        const note0Leaves = await registerNote(note0, deployer['TornadoTrees'], PGRouterAddress)
+        await deployer['TornadoTrees'].updateRoots([note0Leaves.depositLeaf], [note0Leaves.withdrawalLeaf])
+      }
+
+      await expect(minerReward(claim1.proof, claim1.args)).to.be.revertedWith('Incorrect deposit tree root')
+      await expect(minerReward(claim2.proof, claim2.args)).to.be.fulfilled
+
+      const note5Leaves = await registerNote(note5, deployer['TornadoTrees'], PGRouterAddress)
+      await deployer['TornadoTrees'].updateRoots([note5Leaves.depositLeaf], [note5Leaves.withdrawalLeaf])
+
+      const claim3 = await controller.reward({
+        account: new Account(),
+        note: note5,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await expect(minerReward(claim3.proof, claim3.args)).to.be.fulfilled
+    })
+  })
+
+  describe('withdraw', () => {
+    const preWithdraw = async ({
+      deployer,
+      instances,
+    }: Pick<PreFunctionParameter, 'deployer' | 'instances'>) => {
+      const outerPreResponse = await pre({ deployer, instances })
+
+      const { proof, args, account } = await outerPreResponse.controller.reward({
+        account: new Account(),
+        note: outerPreResponse.note,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await outerPreResponse.minerReward(proof, args)
+
+      return {
+        ...outerPreResponse,
+        proof,
+        args,
+        account,
+      }
+    }
+    it('should work', async function () {
+      // need to have rewardswap to test
     })
   })
 })

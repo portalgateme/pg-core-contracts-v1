@@ -1,13 +1,13 @@
-import { BigNumber, utils } from 'ethers'
+// @ts-ignore
 import { encrypt, decrypt } from 'eth-sig-util'
 import { randomBN, poseidonHash } from '../utils'
 import { toBN } from 'web3-utils'
 import { BN } from 'ethereumjs-util'
 
 type AccountParams = {
-  amount?: string | BN
-  secret?: string | BN
-  nullifier?: string | BN
+  amount?: string | number
+  secret?: string | number
+  nullifier?: string | number
 }
 
 class Account {
@@ -43,9 +43,9 @@ class Account {
     const decryptedMessage = decrypt(data, privkey)
     const buf = Buffer.from(decryptedMessage, 'base64')
     return new Account({
-      amount: toBN('0x' + buf.slice(0, 31).toString('hex')),
-      secret: toBN('0x' + buf.slice(31, 62).toString('hex')),
-      nullifier: toBN('0x' + buf.slice(62, 93).toString('hex')),
+      amount: '0x' + buf.slice(0, 31).toString('hex'),
+      secret: '0x' + buf.slice(31, 62).toString('hex'),
+      nullifier: '0x' + buf.slice(62, 93).toString('hex'),
     })
   }
 }

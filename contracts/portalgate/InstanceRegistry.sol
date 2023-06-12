@@ -12,6 +12,7 @@ import "./PGRouter.sol";
 contract InstanceRegistry {
     using SafeERC20 for IERC20;
 
+    // add MINABLE state
     enum InstanceState {
         DISABLED,
         ENABLED
