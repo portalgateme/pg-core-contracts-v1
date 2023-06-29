@@ -6,5 +6,6 @@ export { ERC20Tornado__factory } from "./ERC20Tornado__factory";
 export { ETHTornado__factory } from "./ETHTornado__factory";
 export { MerkleTreeWithHistory__factory } from "./MerkleTreeWithHistory__factory";
 export { Miner__factory } from "./Miner__factory";
+export { RewardSwap__factory } from "./RewardSwap__factory";
 export { TornadoTrees__factory } from "./TornadoTrees__factory";
 export { Verifier__factory } from "./Verifier__factory";

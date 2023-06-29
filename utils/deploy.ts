@@ -16,6 +16,10 @@ export function onlyLocalNetwork(chainId: number) {
   }
 }
 
+export function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export enum DeployTags {
   TEST = 'test',
   STAGE = 'stage',
@@ -26,6 +30,8 @@ export enum DeployTags {
   TornadoInstance = 'tornado-instance',
   Zapper = 'zapper',
   IntermediaryVault = 'intermediary-vault',
+  RewardSwap = 'reward-swap',
+  APToken = 'ap-token',
 
   MockERC20 = 'mock-erc20',
   KeyringDependency = 'keyring-dependency',
@@ -33,4 +39,6 @@ export enum DeployTags {
   MockKycETH = 'mock-kyc-eth',
   TornadoTrees = 'tornado-trees',
   Miner = 'miner',
+  Hashers = 'hashers',
+  SetupInstances = 'setup-instances',
 }

@@ -95,6 +95,10 @@ const config: HardhatUserConfig = {
       default: 0,
     },
   },
+  mocha: {
+    timeout: 90000,
+    color: true,
+  },
 }
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {

@@ -5,6 +5,7 @@ export { ENSRegistry__factory } from "./ENSRegistry__factory";
 export { ENSResolver__factory } from "./ENSResolver__factory";
 export { IBatchTreeUpdateVerifier__factory } from "./IBatchTreeUpdateVerifier__factory";
 export { IHasher__factory } from "./IHasher__factory";
+export { IPGAT__factory } from "./IPGAT__factory";
 export { IRelayerRegistry__factory } from "./IRelayerRegistry__factory";
 export { IRewardSwap__factory } from "./IRewardSwap__factory";
 export { ITornadoInstance__factory } from "./ITornadoInstance__factory";

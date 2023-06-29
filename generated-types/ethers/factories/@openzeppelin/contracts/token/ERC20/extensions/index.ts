@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as draftIerc20PermitSol from "./draft-IERC20Permit.sol";
+export { ERC20Burnable__factory } from "./ERC20Burnable__factory";
 export { ERC20Permit__factory } from "./ERC20Permit__factory";
 export { ERC20Wrapper__factory } from "./ERC20Wrapper__factory";
 export { IERC20Metadata__factory } from "./IERC20Metadata__factory";

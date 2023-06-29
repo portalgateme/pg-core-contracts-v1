@@ -3,8 +3,6 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { network } from 'hardhat'
 import { DeployTags, baseDeployOptions } from '../utils/deploy'
 
-const genContract2 = require('circomlib/src/poseidon_gencontract.js')
-
 const deployTornadoInstance: DeployFunction = async ({
   deployments,
   getNamedAccounts,
@@ -38,15 +36,7 @@ const deployTornadoInstance: DeployFunction = async ({
     ...baseDeployOpts,
   })
 
-  const hasher2 = await deploy('Hasher2', {
-    contract: {
-      abi: genContract2.generateABI(2),
-      bytecode: genContract2.createCode(2),
-    },
-    from: deployer,
-    args: [],
-    ...baseDeployOpts,
-  })
+  const hasher2 = await deployments.get('Hasher2')
 
   for await (const instance of instancesToDeploy) {
     await deploy(`ERC20Tornado-${instance.denomination}`, {

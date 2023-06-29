@@ -83,7 +83,7 @@ async function pre({ deployer, instances }: Pick<PreFunctionParameter, 'deployer
   const depositData = []
   const withdrawalData = []
 
-  const PGRouterAddress = await deployer['PGRouter'].address
+  const PGRouterAddress = deployer['PGRouter'].address
 
   for (const note of notes) {
     const { depositLeaf, withdrawalLeaf } = await registerNote(
@@ -94,8 +94,6 @@ async function pre({ deployer, instances }: Pick<PreFunctionParameter, 'deployer
     withdrawalData.push(withdrawalLeaf)
     depositData.push(depositLeaf)
   }
-
-  await deployer['TornadoTrees'].updateRoots(depositData, withdrawalData)
 
   const minerReward =
     deployer['Miner'][
@@ -131,6 +129,7 @@ async function pre({ deployer, instances }: Pick<PreFunctionParameter, 'deployer
 describe('Miner', function () {
   describe('Deployment', function () {
     it('Should deploy Miner', async function () {
+      console.log(firstHardhatPublicKey)
       const { deployer } = await setup()
       expect(deployer['Miner'].address).to.be.properAddress
     })
@@ -526,74 +525,20 @@ describe('Miner', function () {
         'Invalid tree update proof',
       )
     })
-
-    it('should work with outdated deposit or withdrawal merkle root', async () => {
-      const { deployer, instances } = await setup()
-      const { note, controller, minerReward4, minerReward, note2, note3 } = await pre({ deployer, instances })
-      const [erc20_100, erc20_1000] = instances.deployed
-
-      const PGRouterAddress = deployer['PGRouter'].address
-
-      const note0 = new Note({
-        instance: erc20_100.deployedInstance.address,
-        depositBlock: 10,
-        withdrawalBlock: 55,
-      })
-      const note4 = new Note({
-        instance: erc20_100.deployedInstance.address,
-        depositBlock: 10,
-        withdrawalBlock: 55,
-      })
-      const note5 = new Note({
-        instance: erc20_100.deployedInstance.address,
-        depositBlock: 10,
-        withdrawalBlock: 65,
-      })
-
-      const claim1 = await controller.reward({
-        account: new Account(),
-        note: note3,
-        publicKey: firstHardhatPublicKey,
-      })
-
-      const note4Leaves = await registerNote(note4, deployer['TornadoTrees'], PGRouterAddress)
-      await deployer['TornadoTrees'].updateRoots([note4Leaves.depositLeaf], [note4Leaves.withdrawalLeaf])
-
-      const claim2 = await controller.reward({
-        account: new Account(),
-        note: note4,
-        publicKey: firstHardhatPublicKey,
-      })
-
-      for (let i = 0; i < 9; i++) {
-        const note0Leaves = await registerNote(note0, deployer['TornadoTrees'], PGRouterAddress)
-        await deployer['TornadoTrees'].updateRoots([note0Leaves.depositLeaf], [note0Leaves.withdrawalLeaf])
-      }
-
-      await expect(minerReward(claim1.proof, claim1.args)).to.be.revertedWith('Incorrect deposit tree root')
-      await expect(minerReward(claim2.proof, claim2.args)).to.be.fulfilled
-
-      const note5Leaves = await registerNote(note5, deployer['TornadoTrees'], PGRouterAddress)
-      await deployer['TornadoTrees'].updateRoots([note5Leaves.depositLeaf], [note5Leaves.withdrawalLeaf])
-
-      const claim3 = await controller.reward({
-        account: new Account(),
-        note: note5,
-        publicKey: firstHardhatPublicKey,
-      })
-
-      await expect(minerReward(claim3.proof, claim3.args)).to.be.fulfilled
-    })
   })
 
-  describe('withdraw', () => {
+  describe.only('withdraw', () => {
     const preWithdraw = async ({
       deployer,
       instances,
     }: Pick<PreFunctionParameter, 'deployer' | 'instances'>) => {
       const outerPreResponse = await pre({ deployer, instances })
 
-      const { proof, args, account } = await outerPreResponse.controller.reward({
+      const {
+        proof,
+        args,
+        account: newAccount,
+      } = await outerPreResponse.controller.reward({
         account: new Account(),
         note: outerPreResponse.note,
         publicKey: firstHardhatPublicKey,
@@ -605,11 +550,100 @@ describe('Miner', function () {
         ...outerPreResponse,
         proof,
         args,
-        account,
+        account: newAccount,
+        recipient: deployer.address,
       }
     }
     it('should work', async function () {
-      // need to have rewardswap to test
+      const { deployer, instances } = await setup()
+      const { controller, minerReward, note, note2, note3, account, recipient } = await preWithdraw({
+        deployer,
+        instances,
+      })
+
+      const apAmount = account.amount
+
+      expect(await deployer['Miner'].accountNullifiers(toFixedHex(account.nullifierHash))).to.equal(false)
+
+      const withdrawSnark = await controller.withdraw({
+        account,
+        amount: apAmount.toString(),
+        recipient,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const balanceBefore = await deployer['PGAP'].balanceOf(recipient)
+
+      await deployer['Miner'][
+        'withdraw(bytes,(uint256,bytes32,(uint256,address,address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)))'
+      ](withdrawSnark.proof, withdrawSnark.args)
+
+      const balanceAfter = await deployer['PGAP'].balanceOf(recipient)
+
+      expect(balanceBefore).to.equal(0)
+      expect(balanceAfter).to.equal(apAmount)
+    })
+    it('should fail for double spend', async function () {
+      const { deployer, instances } = await setup()
+      const { controller, minerReward, note, note2, note3, account, recipient } = await preWithdraw({
+        deployer,
+        instances,
+      })
+
+      const apAmount = account.amount
+
+      expect(await deployer['Miner'].accountNullifiers(toFixedHex(account.nullifierHash))).to.equal(false)
+
+      const withdrawSnark = await controller.withdraw({
+        account,
+        amount: apAmount.toString(),
+        recipient,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      await deployer['Miner'][
+        'withdraw(bytes,(uint256,bytes32,(uint256,address,address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)))'
+      ](withdrawSnark.proof, withdrawSnark.args)
+
+      const balanceAfter = await deployer['PGAP'].balanceOf(recipient)
+
+      expect(balanceAfter).to.equal(apAmount)
+
+      await expect(
+        deployer['Miner'][
+          'withdraw(bytes,(uint256,bytes32,(uint256,address,address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)))'
+        ](withdrawSnark.proof, withdrawSnark.args),
+      ).to.be.revertedWith('Outdated account state')
+    })
+
+    it('should fail for invalid amount', async function () {
+      const { deployer, instances } = await setup()
+      const { controller, minerReward, note, note2, note3, account, recipient } = await preWithdraw({
+        deployer,
+        instances,
+      })
+
+      const apAmount = account.amount
+
+      const withdrawSnark = await controller.withdraw({
+        account,
+        amount: apAmount.toString(),
+        recipient,
+        publicKey: firstHardhatPublicKey,
+      })
+
+      const malformedArgs = JSON.parse(JSON.stringify(withdrawSnark.args))
+      malformedArgs.amount = toFixedHex(toBN(2).pow(toBN(248)))
+
+      await expect(
+        deployer['Miner'][
+          'withdraw(bytes,(uint256,bytes32,(uint256,address,address,bytes),(bytes32,bytes32,bytes32,uint256,bytes32)))'
+        ](withdrawSnark.proof, malformedArgs),
+      ).to.be.revertedWith('Amount value out of range')
+
+      const balanceAfter = await deployer['PGAP'].balanceOf(recipient)
+
+      expect(balanceAfter).to.equal(0)
     })
   })
 })

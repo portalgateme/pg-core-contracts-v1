@@ -11,10 +11,10 @@ import "./TornadoTrees.sol";
 contract Miner {
   using SafeMath for uint256;
 
+  IRewardSwap public rewardSwap;
   IVerifier public rewardVerifier;
   IVerifier public withdrawVerifier;
   IVerifier public treeUpdateVerifier;
-//  IRewardSwap public rewardSwap;
   address public immutable governance;
   TornadoTrees public tornadoTrees;
 
@@ -87,26 +87,24 @@ contract Miner {
   }
 
   constructor(
-//    address _rewardSwap,
-    address _governance, // operator
+    address _rewardSwap,
+    address _governance,
     address _tornadoTrees,
     address[3] memory _verifiers,
     bytes32 _accountRoot,
     Rate[] memory _rates
   ) {
-//    rewardSwap = IRewardSwap(_rewardSwap);
+    rewardSwap = IRewardSwap(_rewardSwap);
     governance = _governance;
     tornadoTrees = TornadoTrees(_tornadoTrees);
 
-    // insert empty tree root without incrementing accountCount counter
     accountRoots[0] = _accountRoot;
 
     _setRates(_rates);
-    // prettier-ignore
     _setVerifiers([
-    IVerifier(_verifiers[0]),
-    IVerifier(_verifiers[1]),
-    IVerifier(_verifiers[2])
+      IVerifier(_verifiers[0]),
+      IVerifier(_verifiers[1]),
+      IVerifier(_verifiers[2])
     ]);
   }
 
@@ -158,7 +156,7 @@ contract Miner {
     rewardNullifiers[_args.rewardNullifier] = true;
     insertAccountRoot(_args.account.inputRoot == getLastAccountRoot() ? _args.account.outputRoot : _treeUpdateArgs.newRoot);
     if (_args.fee > 0) {
-//      rewardSwap.swap(_args.extData.relayer, _args.fee);
+      rewardSwap.swap(_args.extData.relayer, _args.fee);
     }
 
     emit NewAccount(
@@ -203,11 +201,10 @@ contract Miner {
     // allow submitting noop withdrawals (amount == 0)
     uint256 amount = _args.amount.sub(_args.extData.fee, "Amount should be greater than fee");
     if (amount > 0) {
-//      rewardSwap.swap(_args.extData.recipient, amount);
+      rewardSwap.swap(_args.extData.recipient, amount);
     }
-    // Note. The relayer swap rate always will be worse than estimated
     if (_args.extData.fee > 0) {
-//      rewardSwap.swap(_args.extData.relayer, _args.extData.fee);
+      rewardSwap.swap(_args.extData.relayer, _args.extData.fee);
     }
 
     emit NewAccount(
@@ -229,10 +226,6 @@ contract Miner {
   function setTornadoTreesContract(TornadoTrees _tornadoTrees) external onlyGovernance {
     tornadoTrees = _tornadoTrees;
   }
-
-//  function setPoolWeight(uint256 _newWeight) external onlyGovernance {
-//    rewardSwap.setPoolWeight(_newWeight);
-//  }
 
   // ------VIEW-------
 

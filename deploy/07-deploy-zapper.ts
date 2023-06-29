@@ -1,7 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { network } from 'hardhat'
-import { baseDeployOptions, DeployTags } from '../utils/deploy'
+import { baseDeployOptions, DeployTags, isLocalNetwork, sleep } from '../utils/deploy'
 
 const deployZapper: DeployFunction = async ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments

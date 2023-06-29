@@ -16,6 +16,10 @@ import { BN } from 'ethereumjs-util'
 
 const web3 = new Web3()
 
+const prepareLeaf = (...data: [string, string, any]): [string, string, any] => {
+  return [data[0], data[1], data[2]]
+}
+
 interface IControllerOptions {
   contract: Contract
   tornadoTreesContract: Contract
@@ -287,7 +291,16 @@ class Controller {
     const accountTree = new MerkleTree(this.merkleTreeHeight, accountCommitments, {
       hashFunction: poseidonHash2,
     })
-    const accountIndex = accountTree.indexOf(account.commitment, (a: any, b: any) => a.eq(b))
+    const accountIndex = accountTree.indexOf(toFixedHex(account.commitment), (a: any, b: any) => {
+      if (typeof a !== 'string') {
+        a = toFixedHex(a)
+      }
+      if (typeof b !== 'string') {
+        b = toFixedHex(b)
+      }
+
+      return a === b
+    })
     if (accountIndex === -1) {
       throw new Error('The accounts tree does not contain such account commitment')
     }

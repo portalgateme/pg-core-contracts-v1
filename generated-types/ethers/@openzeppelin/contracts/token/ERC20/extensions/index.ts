@@ -3,6 +3,7 @@
 /* eslint-disable */
 import type * as draftIerc20PermitSol from "./draft-IERC20Permit.sol";
 export type { draftIerc20PermitSol };
+export type { ERC20Burnable } from "./ERC20Burnable";
 export type { ERC20Permit } from "./ERC20Permit";
 export type { ERC20Wrapper } from "./ERC20Wrapper";
 export type { IERC20Metadata } from "./IERC20Metadata";

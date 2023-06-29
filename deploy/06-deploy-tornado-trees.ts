@@ -1,29 +1,20 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
-import { baseDeployOptions, DeployTags, isLocalNetwork } from '../utils/deploy'
-
-const genContract2 = require('circomlib/src/poseidon_gencontract.js')
+import { baseDeployOptions, DeployTags, isLocalNetwork, sleep } from '../utils/deploy'
 
 const deployPGRouter: DeployFunction = async ({
   deployments,
   getNamedAccounts,
 }: HardhatRuntimeEnvironment) => {
-  const { deploy } = deployments
+  const { deploy, execute } = deployments
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
   const baseDeployOpts = baseDeployOptions(chainId)
 
-  const hasher3 = await deploy('Hasher3', {
-    contract: {
-      abi: genContract2.generateABI(3),
-      bytecode: genContract2.createCode(3),
-    },
-    from: deployer,
-    args: [],
-    ...baseDeployOpts,
-  })
+  const hasher3 = await deployments.get('Hasher3')
+
   const hasher2 = await deployments.get('Hasher2')
 
   const pgRouter = await deployments.get('PGRouter')
@@ -35,11 +26,10 @@ const deployPGRouter: DeployFunction = async ({
     ...baseDeployOpts,
   })
 
-  const PGRouter = await ethers.getContract('PGRouter', deployer)
-  await PGRouter.setTornadoTreesContract(tornadoTrees.address)
+  await execute('PGRouter', { from: deployer, log: true }, 'setTornadoTreesContract', tornadoTrees.address)
 }
 
 export default deployPGRouter
 
-deployPGRouter.dependencies = ['PGRouter', 'Hasher2']
+// deployPGRouter.dependencies = ['PGRouter', 'Hasher2']
 deployPGRouter.tags = [DeployTags.TEST, DeployTags.STAGE, DeployTags.TornadoTrees]
