@@ -6,8 +6,6 @@ import "./IKeyringZkVerifier.sol";
 
 interface IKeyringZkCredentialUpdater {
     
-    error Unacceptable(string reason);
-
     event CredentialUpdaterDeployed(
         address deployer,
         address trustedForwarder,

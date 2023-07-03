@@ -5,7 +5,6 @@ pragma solidity 0.8.14;
 import "../interfaces/IKeyringZkCredentialUpdater.sol";
 import "../interfaces/IPolicyManager.sol";
 import "../interfaces/IKeyringCredentials.sol";
-import "../interfaces/IIdentityTree.sol";
 import "../interfaces/IRuleRegistry.sol";
 import "../interfaces/IWalletCheck.sol";
 import "../interfaces/IKeyringZkVerifier.sol";
@@ -27,6 +26,7 @@ contract KeyringZkCredentialUpdater is
     using Pack12x20 for uint256;
 
     address private constant NULL_ADDRESS = address(0);
+    bytes32 private constant NULL_BYTES32 = bytes32(0);
     IRuleRegistry private immutable RULE_REGISTRY;
     address public immutable override POLICY_MANAGER;
     address public immutable override KEYRING_CREDENTIALS;
@@ -44,10 +44,6 @@ contract KeyringZkCredentialUpdater is
         address policyManager,
         address keyringZkVerifier
     ) KeyringAccessControl(trustedForwarder) {
-        if (trustedForwarder == NULL_ADDRESS)
-            revert Unacceptable({
-                reason: "trustedForwarder cannot be empty"
-            });
         if (keyringCredentials == NULL_ADDRESS)
             revert Unacceptable({
                 reason: "keyringCredentials cannot be empty"
@@ -83,7 +79,6 @@ contract KeyringZkCredentialUpdater is
      ensure that both proofs were derived from the same identity commitment. If the root age used to construct proofs
      if older than the policy time to live (ttl), the root will be considered acceptable with an age of zero, provided
      that the number of root successors is less than or equal to the policy acceptRoots (accept most recent n roots).
-     Credential updates clear on-chain wallet checks and thus force an off-chain check and update.
      * @param attestor The identityTree contract with a root that contains the user's identity commitment. Must be 
      present in the current attestor list for all policy disclosures in the authorization proof. 
      * @param membershipProof A zero-knowledge proof of identity commitment membership in the identity tree. Contains an
@@ -96,6 +91,8 @@ contract KeyringZkCredentialUpdater is
         IKeyringZkVerifier.IdentityMembershipProof calldata membershipProof,
         IKeyringZkVerifier.IdentityAuthorisationProof calldata authorizationProof
     ) external override {
+
+        bytes32 requireBackdoor;
 
         if (!IPolicyManager(POLICY_MANAGER).isGlobalAttestor(attestor))
             revert Unacceptable({ reason: "attestor unacceptable" });
@@ -114,9 +111,9 @@ contract KeyringZkCredentialUpdater is
             membershipProof,
             authorizationProof
         )) revert Unacceptable({
-                reason: "Proof unacceptable"});
+            reason: "Proof unacceptable"});
 
-        uint256 rootTime = IIdentityTree(attestor).merkleRootBirthday(root);
+        uint256 rootTime = IDegradable(attestor).subjectUpdates(root);
         
         for(uint256 i = 0; i < 24; i++) {
 
@@ -128,27 +125,46 @@ contract KeyringZkCredentialUpdater is
                     reason: "policy or attestor unacceptable"
                 });
 
-            if(rootTime + IPolicyManager(POLICY_MANAGER).policyTtl(policyId) < block.timestamp) {
-                uint256 ar = IPolicyManager(POLICY_MANAGER).policyAcceptRoots(policyId);
-                if(IIdentityTree(attestor).merkleRootSuccessors(bytes32(membershipProof.root)) <= ar && ar > 0) {
-                    IKeyringCredentials(KEYRING_CREDENTIALS).setCredential(
-                        trader, 
-                        policyId,                
-                        block.timestamp);
+            /**
+             @dev Set the credential cache. 
+             */
+            IKeyringCredentials(KEYRING_CREDENTIALS).setCredential(
+                trader, 
+                policyId,                
+                rootTime);
+
+            /**
+             @dev This verifier supports exactly one backdoor per proof. Therefore, all policies in the
+             disclosure must require the same backdoor, or no backdoor. 
+             */
+            uint256 policyBackdoorCount = IPolicyManager(POLICY_MANAGER).policyBackdoorCount(policyId);
+            if (policyBackdoorCount > 1) revert Unacceptable({ reason: "multiple policy backdoors are not supported" });
+            if (policyBackdoorCount == 1) {
+                if (requireBackdoor == NULL_BYTES32) {
+                    requireBackdoor = IPolicyManager(POLICY_MANAGER).policyBackdoorAtIndex(policyId, 0);
                 } else {
-                    IKeyringCredentials(KEYRING_CREDENTIALS).setCredential(
-                        trader, 
-                        policyId,                
-                        rootTime);                    
+                    if(requireBackdoor != IPolicyManager(POLICY_MANAGER).policyBackdoorAtIndex(policyId,0))
+                        revert Unacceptable({
+                            reason: "all policies in the proof must rely on the same backdoor or no backdoor"
+                        });
                 }
-            } else {
-                IKeyringCredentials(KEYRING_CREDENTIALS).setCredential(
-                    trader, 
-                    policyId,                
-                    rootTime);
             }
-            
         }
+
+        /**
+         @dev If any policy requires a backdoor, confirm the backdoor is contained in the Proof. 
+         */
+        if (requireBackdoor != NULL_BYTES32) {
+            uint256[2] memory requirePubKey = IPolicyManager(POLICY_MANAGER).backdoorPubKey(requireBackdoor);
+            if (requirePubKey[0] != authorizationProof.regimeKey[0] ||
+                requirePubKey[1] != authorizationProof.regimeKey[1]) 
+            {
+                revert Unacceptable ({
+                    reason: "Proof does not contain required backdoor regimeKey"
+                });
+            }
+        }
+
         emit AcceptCredentialUpdate(
             sender, 
             trader, 
@@ -172,13 +188,16 @@ contract KeyringZkCredentialUpdater is
         IPolicyManager p = IPolicyManager(POLICY_MANAGER);
         if(!p.isPolicy(policyId)) return false;
 
-        acceptable = !(RULE_REGISTRY.ruleIsToxic(p.policyRuleId(policyId))) &&
+        PolicyStorage.PolicyScalar memory policyScalar = 
+            IPolicyManager(POLICY_MANAGER).policyScalarActive(policyId);
+
+        acceptable = !(RULE_REGISTRY.ruleIsToxic(policyScalar.ruleId)) &&
             p.isPolicyAttestor(policyId, attestor);
     }
 
     /**
      * @notice Packs uint32[12] into uint256 with 20-bit precision.
-     * @dev This function will disregard bits greater than 20 bits of magnitude.
+     * @dev uint32 Inputs are limited to 20 bits of magnitude.
      * @param input 20 bit unsigned integers cast as uint32.
      * @return packed Uint256 packed format contained encoding of 12 20-bit uints. 
      */

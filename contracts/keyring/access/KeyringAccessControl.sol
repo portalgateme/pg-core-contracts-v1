@@ -14,8 +14,12 @@ import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 abstract contract KeyringAccessControl is ERC2771Context, AccessControl {
 
+    address private constant NULL_ADDRESS = address(0);
+
     // Reservations hold space in upgradeable contracts for future versions of this module.
     bytes32[50] private _reservedSlots;
+
+    error Unacceptable(string reason);
 
     error Unauthorized(
         address sender,
@@ -29,7 +33,21 @@ abstract contract KeyringAccessControl is ERC2771Context, AccessControl {
     /**
      * @param trustedForwarder Contract address that is allowed to relay message signers.
      */
-    constructor(address trustedForwarder) ERC2771Context(trustedForwarder) {}
+    constructor(address trustedForwarder) ERC2771Context(trustedForwarder) {
+        if (trustedForwarder == NULL_ADDRESS)
+            revert Unacceptable({
+                reason: "trustedForwarder cannot be empty"
+            });
+    }
+
+    /**
+     * @notice Disables incomplete ERC165 support inherited from oz/AccessControl.sol
+     * @return bool Never returned.
+     * @dev Always reverts. Do not rely on ERC165 support to interact with this contract.
+     */
+    function supportsInterface(bytes4 /*interfaceId */) public view virtual override returns (bool) {
+        revert Unacceptable ({ reason: "ERC2165 is unsupported" });
+    }
 
     /**
      * @notice Role-based access control.

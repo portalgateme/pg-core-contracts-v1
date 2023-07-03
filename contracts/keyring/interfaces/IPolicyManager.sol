@@ -6,8 +6,6 @@ import "../lib/PolicyStorage.sol";
 
 interface IPolicyManager {
 
-    error Unacceptable(string reason);
-
     event PolicyManagerDeployed(
         address deployer, 
         address trustedForwarder, 
@@ -24,6 +22,8 @@ interface IPolicyManager {
         bytes32 policyOwnerRole,
         bytes32 policyUserAdminRole
     );
+
+    event DisablePolicy(address user, uint32 policyId);
 
     event UpdatePolicyScalar(
         address indexed owner,
@@ -43,15 +43,22 @@ interface IPolicyManager {
         uint128 gracePeriod, 
         uint256 deadline);
 
-    event UpdatePolicyAcceptRoots(address indexed owner, uint32 indexed policyId, uint16 acceptRoots, uint256 deadline);
-
     event UpdatePolicyLock(address indexed owner, uint32 indexed policyId, bool locked, uint256 deadline);
 
-    event UpdatePolicyAllowUserWhitelists(
+    event UpdatePolicyAllowApprovedCounterparties(
         address indexed owner, 
         uint32 indexed policyId, 
-        bool allowUserWhitelists, 
+        bool allowApprovedCounterparties, 
         uint256 deadline);
+
+    event UpdatePolicyDisablementPeriod(
+        address indexed admin, 
+        uint32 indexed policyId, 
+        uint256 disablementPeriod, 
+        uint256 deadline
+    );
+
+    event PolicyDisabled(address indexed sender, uint32 indexed policyId);
 
     event UpdatePolicyDeadline(address indexed owner, uint32 indexed policyId, uint256 deadline);
 
@@ -83,6 +90,20 @@ interface IPolicyManager {
         uint256 deadline
     );
 
+    event AddPolicyBackdoor(
+        address indexed owner,
+        uint32 indexed policyId,
+        bytes32 backdoorId,
+        uint256 deadline
+    );
+
+    event RemovePolicyBackdoor(
+        address indexed owner,
+        uint32 indexed policyId,
+        bytes32 backdoorId,
+        uint256 deadline
+    );  
+
     event AdmitAttestor(address indexed admin, address indexed attestor, string uri);
     
     event UpdateAttestorUri(address indexed admin, address indexed attestor, string uri);
@@ -93,11 +114,19 @@ interface IPolicyManager {
 
     event RemoveWalletCheck(address indexed admin, address indexed walletCheck);
 
+    event AdmitBackdoor(address indexed admin, bytes32 id, uint256[2] pubKey);
+
+    event MinimumPolicyDisablementPeriodUpdated(uint256 newPeriod);
+
     function ROLE_POLICY_CREATOR() external view returns (bytes32);
 
     function ROLE_GLOBAL_ATTESTOR_ADMIN() external view returns (bytes32);
 
     function ROLE_GLOBAL_WALLETCHECK_ADMIN() external view returns (bytes32);
+
+    function ROLE_GLOBAL_VALIDATION_ADMIN() external view returns (bytes32);
+
+    function ROLE_GLOBAL_BACKDOOR_ADMIN() external view returns (bytes32);
 
     function ruleRegistry() external view returns (address);
 
@@ -108,6 +137,8 @@ interface IPolicyManager {
         address[] calldata attestors,
         address[] calldata walletChecks
     ) external returns (uint32 policyId, bytes32 policyOwnerRoleId, bytes32 policyUserAdminRoleId);
+
+    function disablePolicy(uint32 policyId) external;
 
     function updatePolicyScalar(
         uint32 policyId,
@@ -123,11 +154,14 @@ interface IPolicyManager {
 
     function updatePolicyGracePeriod(uint32 policyId, uint32 gracePeriod, uint256 deadline) external;
 
-    function updatePolicyAcceptRoots(uint32 policyId, uint16 acceptRoots, uint256 deadline) external;
-
-    function updatePolicyAllowUserWhitelists(uint32 policyId, bool allowUserWhitelists,uint256 deadline) external;
+    function updatePolicyAllowApprovedCounterparties(
+        uint32 policyId, 
+        bool allowApprovedCounterparties,uint256 deadline
+    ) external;
     
     function updatePolicyLock(uint32 policyId, bool locked, uint256 deadline) external;
+
+    function updatePolicyDisablementPeriod(uint32 policyId, uint256 disablementPeriod, uint256 deadline) external;
 
     function setDeadline(uint32 policyId, uint256 deadline) external;
 
@@ -139,6 +173,10 @@ interface IPolicyManager {
 
     function removePolicyWalletChecks(uint32 policyId, address[] calldata walletChecks, uint256 deadline) external;
 
+    function addPolicyBackdoor(uint32 policyId, bytes32 backdoorId, uint256 deadline) external;
+
+    function removePolicyBackdoor(uint32 policyId, bytes32 backdoorId, uint256 deadline) external;
+
     function admitAttestor(address attestor, string calldata uri) external;
 
     function updateAttestorUri(address attestor, string calldata uri) external;
@@ -149,12 +187,19 @@ interface IPolicyManager {
 
     function removeWalletCheck(address walletCheck) external;
 
+    function admitBackdoor(uint256[2] memory pubKey) external;
+
+    function updateMinimumPolicyDisablementPeriod(uint256 minimumDisablementPeriod) external;
+
+    function policyOwnerRole(uint32 policyId) external pure returns (bytes32 ownerRole);
+
     function policy(uint32 policyId)
         external
         returns (
             PolicyStorage.PolicyScalar memory scalar,
             address[] memory attestors,
             address[] memory walletChecks,
+            bytes32[] memory backdoorRegimes,
             uint256 deadline
         );
 
@@ -170,25 +215,32 @@ interface IPolicyManager {
             address[] memory attestorsPendingRemovals,
             address[] memory walletChecksActive,
             address[] memory walletChecksPendingAdditions,
-            address[] memory walletChecksPendingRemovals);
+            address[] memory walletChecksPendingRemovals,
+            bytes32[] memory backdoorsActive,
+            bytes32[] memory backdoorsPendingAdditions,
+            bytes32[] memory backdoorsPendingRemovals);
 
-    function policyDescription(uint32 policyId) external returns (string memory description);
+    function policyScalarActive(uint32 policyId) 
+        external 
+        returns (PolicyStorage.PolicyScalar memory scalarActive);
 
-    function policyOwnerRole(uint32 policyId) external pure returns (bytes32 ownerRole);
+    function policyRuleId(uint32 policyId)
+        external
+        returns (bytes32 ruleId);
 
-    function policyRuleId(uint32 policyId) external returns (bytes32 ruleId);
-    
-    function policyTtl(uint32 policyId) external returns (uint128 ttl);
+    function policyTtl(uint32 policyId) 
+        external
+        returns (uint32 ttl);
 
-    function policyGracePeriod(uint32 policyId) external returns(uint128 gracePeriod);
+    function policyAllowApprovedCounterparties(uint32 policyId) 
+        external
+        returns (bool isAllowed);
 
-    function policyAcceptRoots(uint32 policyId) external returns (uint16 acceptRoots);
+    function policyDisabled(uint32 policyId) external view returns (bool isDisabled);
 
-    function policyAllowUserWhitelists(uint32 policyId) external returns (bool isAllowed);
-
-    function policyLocked(uint32 policyId) external returns (bool isLocked);
-
-    function policyDeadline(uint32 policyId) external returns (uint256 deadline);
+    function policyCanBeDisabled(uint32 policyId) 
+        external
+        returns (bool canIndeed);
 
     function policyAttestorCount(uint32 policyId) external returns (uint256 count);
 
@@ -214,6 +266,14 @@ interface IPolicyManager {
         external
         returns (bool isIndeed);
 
+    function policyBackdoorCount(uint32 policyId) external returns (uint256 count);
+
+    function policyBackdoorAtIndex(uint32 policyId, uint256 index) external returns (bytes32 backdoorId);
+
+    function policyBackdoors(uint32 policyId) external returns (bytes32[] memory backdoors);
+
+    function isPolicyBackdoor(uint32 policyId, bytes32 backdoorId) external returns (bool isIndeed);
+
     function policyCount() external view returns (uint256 count);
 
     function isPolicy(uint32 policyId) external view returns (bool isIndeed);
@@ -230,7 +290,17 @@ interface IPolicyManager {
 
     function isGlobalWalletCheck(address walletCheck) external view returns (bool isIndeed);
 
+    function globalBackdoorCount() external view returns (uint256 count);
+
+    function globalBackdoorAtIndex(uint256 index) external view returns (bytes32 backdoorId);
+
+    function isGlobalBackdoor(bytes32 backdoorId) external view returns (bool isIndeed);    
+
+    function backdoorPubKey(bytes32 backdoorId) external view returns (uint256[2] memory pubKey);
+    
     function attestorUri(address attestor) external view returns (string memory);
 
     function hasRole(bytes32 role, address user) external view returns (bool);
+
+    function minimumPolicyDisablementPeriod()  external view returns (uint256 period);
   }

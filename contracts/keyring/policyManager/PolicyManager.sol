@@ -19,14 +19,17 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     using PolicyStorage for PolicyStorage.App;
     using PolicyStorage for PolicyStorage.Policy;
     using AddressSet for AddressSet.Set;
+    using Bytes32Set for Bytes32Set.Set;
 
     uint32 private constant DEFAULT_TTL = 1 days; 
     address private constant NULL_ADDRESS = address(0);
     bytes32 private constant SEED_POLICY_OWNER = keccak256("spo");
 
-    bytes32 public constant override ROLE_POLICY_CREATOR = keccak256("rpc");
-    bytes32 public constant override ROLE_GLOBAL_ATTESTOR_ADMIN = keccak256("rgaa");
-    bytes32 public constant override ROLE_GLOBAL_WALLETCHECK_ADMIN = keccak256("rgwca");
+    bytes32 public constant override ROLE_POLICY_CREATOR = keccak256("c");
+    bytes32 public constant override ROLE_GLOBAL_ATTESTOR_ADMIN = keccak256("a");
+    bytes32 public constant override ROLE_GLOBAL_WALLETCHECK_ADMIN = keccak256("w");
+    bytes32 public constant override ROLE_GLOBAL_BACKDOOR_ADMIN = keccak256("b");
+    bytes32 public constant override ROLE_GLOBAL_VALIDATION_ADMIN = keccak256("v");
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable override ruleRegistry;
@@ -71,6 +74,24 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Keyring governance has exclusive access to the global whitelist of backdoor.
+     * @dev Reverts if the user doesn't have the global backdoor admin role. 
+     */
+    modifier onlyBackdoorAdmin() {
+        _checkRole(ROLE_GLOBAL_BACKDOOR_ADMIN, _msgSender(), "pm:oba");
+        _;
+    }
+
+    /**
+     * @notice Keyring Governance has exclusive access to input validation parameters.
+     * @dev Reverts if the user doesn't have the global validation admin role.
+     */
+    modifier onlyValidationAdmin() {
+        _checkRole(ROLE_GLOBAL_VALIDATION_ADMIN, _msgSender(), "pm:va");
+        _;
+    }
+
+    /**
      * @param trustedForwarder Contract address that is allowed to relay message signers.
      * @param ruleRegistryAddr The address of the deployed RuleRegistry contract.
      */
@@ -79,10 +100,6 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         address ruleRegistryAddr)
         KeyringAccessControl(trustedForwarder)
     {
-        if (trustedForwarder == NULL_ADDRESS)
-            revert Unacceptable({
-                reason: "trustedForwarder cannot be empty"
-            });
         if (ruleRegistryAddr == NULL_ADDRESS)
             revert Unacceptable({
                 reason: "ruleRegistry cannot be empty"
@@ -106,8 +123,8 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
             descriptionUtf8: "default user policy",
             ttl: DEFAULT_TTL,
             gracePeriod: 0,
-            acceptRoots: 0,
-            allowUserWhitelists: true,
+            allowApprovedCounterparties: true,
+            disablementPeriod: policyStorage.minimumPolicyDisablementPeriod,
             locked: true
         });
         policyStorage.newPolicy(
@@ -176,6 +193,16 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Any user can disable a policy if the policy is deemed failed. 
+     * @param policyId The policy to disable.
+     */
+    function disablePolicy(uint32 policyId) external {
+        if(policyId == 0) revert Unacceptable({ reason: "cannot disable the default policy" });
+        policyStorage.policy(policyId).disablePolicy();
+        emit DisablePolicy(_msgSender(), policyId);
+    }
+
+    /**
      * @notice The Policy admin role can update a policy's scalar values one step.
      * @dev Deadlines must always be >= the active policy grace period. 
      * @param policyId The unique identifier of a Policy.
@@ -213,9 +240,9 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         onlyPolicyAdmin(policyId)
     {
         PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        policyObj.processStaged();
         policyObj.writeDescription(descriptionUtf8);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit UpdatePolicyDescription(_msgSender(), policyId, descriptionUtf8, deadline);
     }
 
@@ -232,9 +259,9 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         onlyPolicyAdmin(policyId)
     {
         PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        policyObj.processStaged();
         policyObj.writeRuleId(ruleId, ruleRegistry);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit UpdatePolicyRuleId(_msgSender(), policyId, ruleId, deadline);
     }
 
@@ -250,10 +277,9 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         policyObj.writeTtl(ttl);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit UpdatePolicyTtl(_msgSender(), policyId, ttl, deadline);
     }
 
@@ -269,51 +295,32 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId) 
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         policyObj.writeGracePeriod(gracePeriod);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit UpdatePolicyGracePeriod(_msgSender(), policyId, gracePeriod, deadline);
-    }
-
-    /**
-     * @notice Policy admins can force acceptance of the last n identity tree roots. This facility
-     provides protection for traders in the event that circumstances prevent the publication of 
-     new identity tree roots.
-     * @dev Deadlines must always be >= the active policy grace period. 
-     * @param policyId The policy to update.
-     * @param acceptRoots The depth of most recent roots to always accept.
-     * @param deadline The timestamp when the staged changes will take effect. Overrides previous deadline.
-     */
-    function updatePolicyAcceptRoots(uint32 policyId, uint16 acceptRoots, uint256 deadline) 
-        external
-        override 
-        onlyPolicyAdmin(policyId) 
-    {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        policyObj.writeAcceptRoots(acceptRoots);
-        policyStorage.setDeadline(policyId, deadline);
-        emit UpdatePolicyAcceptRoots(_msgSender(), policyId, acceptRoots, deadline);
     }
 
     /**
      * @notice Policy owners can allow users to set whitelists of counterparties to exempt from
      compliance checks.
      * @param policyId The policy to update.
-     * @param allowUserWhitelists True if whitelists are allowed, otherwise false.
+     * @param allowApprovedCounterparties True if whitelists are allowed, otherwise false.
      * @param deadline The timestamp when the staged changes will take effect. Overrides previous deadline.
      */
-    function updatePolicyAllowUserWhitelists(uint32 policyId, bool allowUserWhitelists,uint256 deadline) 
+    function updatePolicyAllowApprovedCounterparties(
+        uint32 policyId, 
+        bool allowApprovedCounterparties, 
+        uint256 deadline
+        ) 
         external 
         override 
         onlyPolicyAdmin(policyId) 
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        policyObj.writeAllowUserWhitelists(allowUserWhitelists);
-        policyStorage.setDeadline(policyId, deadline);
-        emit UpdatePolicyAllowUserWhitelists(_msgSender(), policyId, allowUserWhitelists, deadline);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
+        policyObj.writeAllowApprovedCounterparties(allowApprovedCounterparties);
+        policyObj.setDeadline(deadline);
+        emit UpdatePolicyAllowApprovedCounterparties(_msgSender(), policyId, allowApprovedCounterparties, deadline);
     }
 
     /**
@@ -328,13 +335,30 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         if(policyObj.scalarPending.locked != locked) {
             policyObj.writePolicyLock(locked);
-            policyStorage.setDeadline(policyId, deadline);
+            policyObj.setDeadline(deadline);
             emit UpdatePolicyLock(_msgSender(), policyId, locked, deadline);
         }
+    }
+
+    /**
+     * @notice Update the disablement period of a policy. See disable Policy.
+     * @dev This function updates the disablement period of the policy specified by `policyId` to `disablementPeriod`.
+     * Only the policy admin can call this function.
+     * @param policyId The ID of the policy to update.
+     * @param disablementPeriod The new disablement period for the policy.
+     */
+    function updatePolicyDisablementPeriod(uint32 policyId, uint256 disablementPeriod, uint256 deadline) 
+        external
+        override
+        onlyPolicyAdmin(policyId) 
+    {
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
+        policyStorage.writeDisablementPeriod(policyId, disablementPeriod);
+        policyObj.setDeadline(deadline);
+        emit UpdatePolicyDisablementPeriod(_msgSender(), policyId, disablementPeriod, deadline);
     }
 
     /**
@@ -348,8 +372,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override 
         onlyPolicyAdmin(policyId) 
     {
-        policyStorage.processStaged(policyId);
-        policyStorage.setDeadline(policyId, deadline);
+        policyStorage.policy(policyId).setDeadline(deadline);
         emit UpdatePolicyDeadline(_msgSender(), policyId, deadline);
     }
 
@@ -366,10 +389,9 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         policyStorage.writeAttestorAdditions(policyObj, attestors);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit AddPolicyAttestors(_msgSender(), policyId, attestors, deadline);
     }
 
@@ -386,10 +408,9 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         policyObj.writeAttestorRemovals(attestors);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit RemovePolicyAttestors(_msgSender(), policyId, attestors, deadline);
     }
 
@@ -406,10 +427,9 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         policyStorage.writeWalletCheckAdditions(policyObj, walletChecks);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit AddPolicyWalletChecks(_msgSender(), policyId, walletChecks, deadline);
     }
 
@@ -426,11 +446,42 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         onlyPolicyAdmin(policyId)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         policyObj.writeWalletCheckRemovals(walletChecks);
-        policyStorage.setDeadline(policyId, deadline);
+        policyObj.setDeadline(deadline);
         emit RemovePolicyWalletChecks(_msgSender(), policyId, walletChecks, deadline);
+    }
+
+    /**
+     * @notice The policy admin can add a backdoor.
+     * @param policyId The policy to update.
+     * @param backdoorId The UID of the backdoor to add. 
+     */
+    function addPolicyBackdoor(uint32 policyId, bytes32 backdoorId, uint256 deadline)
+        external
+        override
+        onlyPolicyAdmin(policyId)
+    {
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
+        policyStorage.writeBackdoorAddition(policyObj, backdoorId);
+        policyObj.setDeadline(deadline);
+        emit AddPolicyBackdoor(_msgSender(), policyId, backdoorId, deadline);   
+    }
+
+    /**
+     * @notice The policy admin can remove a backdoor.
+     * @param policyId The policy to update.
+     * @param backdoorId The UID of the backdoor to remove. 
+     */
+    function removePolicyBackdoor(uint32 policyId, bytes32 backdoorId, uint256 deadline) 
+        external
+        override
+        onlyPolicyAdmin(policyId)
+    {
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
+        policyStorage.policy(policyId).writeBackdoorRemoval(backdoorId);
+        policyObj.setDeadline(deadline);
+        emit RemovePolicyBackdoor(_msgSender(), policyId, backdoorId, deadline);
     }
 
     /***************************************************
@@ -507,9 +558,45 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         emit RemoveWalletCheck(_msgSender(), walletCheck);
     }
 
+    /**
+     * @notice The backdoor admin can admit a backdoor. 
+     * @param pubKey The public key to admit. 
+     * @dev Key must be unique. Removing these keys is unsupported. 
+     */
+    function admitBackdoor(uint256[2] memory pubKey)
+        external
+        override
+        onlyBackdoorAdmin
+    {
+        bytes32 id = policyStorage.insertGlobalBackdoor(pubKey);
+        emit AdmitBackdoor(_msgSender(), id, pubKey);
+    }
+
+    /**
+     * @dev Updates the minimumPolicyDisablementPeriod
+     * @param minimumDisablementPeriod The new value for the minimumPolicyDisablementPeriod property.
+     */
+    function updateMinimumPolicyDisablementPeriod(uint256 minimumDisablementPeriod) 
+        external
+        override
+        onlyValidationAdmin {
+        policyStorage.updateMinimumPolicyDisablementPeriod(minimumDisablementPeriod);
+        emit MinimumPolicyDisablementPeriodUpdated(minimumDisablementPeriod);
+    }
+
     /**********************************************************
      Inspection
      **********************************************************/
+
+    /**
+     * @notice Generate the corresponding admin/owner role for a policyId.
+     * @dev Use static calls to inspect current information.
+     * @param policyId The policyId
+     * @return ownerRole The bytes32 owner role that corresponds to the policyId
+      */
+    function policyOwnerRole(uint32 policyId) public pure override returns (bytes32 ownerRole) {
+        ownerRole = bytes32(uint256(uint32(policyId)));
+    }
 
     /**
      * @param policyId The unique identifier of a Policy.
@@ -517,6 +604,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
      * @return config The scalar values that form part of the policy definition.
      * @return attestors The authorized attestors for the policy.
      * @return walletChecks The policy trader wallet checks that will be performed on a just-in-time basis.
+     * @return backdoors The backdoor regimes applicable to the policy.
      * @return deadline The timestamp when staged changes will take effect.
      */
     function policy(uint32 policyId)
@@ -526,14 +614,15 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
             PolicyStorage.PolicyScalar memory config,
             address[] memory attestors,
             address[] memory walletChecks,
+            bytes32[] memory backdoors,
             uint256 deadline
         )
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         config = policyObj.scalarActive;
         attestors = policyObj.attestors.activeSet.keyList;
         walletChecks = policyObj.walletChecks.activeSet.keyList;
+        backdoors = policyObj.backdoors.activeSet.keyList;
         deadline = policyObj.deadline;
     }
 
@@ -561,9 +650,12 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
             address[] memory attestorsPendingRemovals,
             address[] memory walletChecksActive,
             address[] memory walletChecksPendingAdditions,
-            address[] memory walletChecksPendingRemovals)
+            address[] memory walletChecksPendingRemovals,
+            bytes32[] memory backdoorsActive,
+            bytes32[] memory backdoorsPendingAdditions,
+            bytes32[] memory backdoorsPendingRemovals)
     {
-        PolicyStorage.Policy storage p = policyStorage.policyRawData(policyId);
+        PolicyStorage.Policy storage p = policyStorage.policies[policyId];
         deadline = p.deadline;
         scalarActive = p.scalarActive;
         scalarPending = p.scalarPending;
@@ -573,129 +665,115 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         walletChecksActive = p.walletChecks.activeSet.keyList;
         walletChecksPendingAdditions = p.walletChecks.pendingAdditionSet.keyList;
         walletChecksPendingRemovals = p.walletChecks.pendingRemovalSet.keyList;
+        backdoorsActive = p.backdoors.activeSet.keyList;
+        backdoorsPendingAdditions = p.backdoors.pendingAdditionSet.keyList;
+        backdoorsPendingRemovals = p.backdoors.pendingRemovalSet.keyList;
     }
 
     /**
-     * @notice Generate the corresponding admin/owner role for a policyId
-     * @param policyId The policyId
-     * @return ownerRole The bytes32 owner role that corresponds to the policyId
+     * @notice Inspect the active policy scalar values. 
+     * @dev Use static call to inspect current values.
+     * @param policyId The unique identifier of the policy.
+     * @return scalarActive The active scalar values for the policy. 
+     */
+    function policyScalarActive(uint32 policyId) 
+        external 
+        override 
+        returns (PolicyStorage.PolicyScalar memory scalarActive)
+    {
+        PolicyStorage.Policy storage p = policyStorage.policy(policyId);
+        scalarActive = p.scalarActive;
+    }
+
+    /**
+     * @notice Inspect the policy ruleId.
+     * @dev Use static call to inspect current values.
+     * @param policyId The unique identifier of the policy.
+     * @return ruleId The active scalar values of the policy.
+     */
+    function policyRuleId(uint32 policyId)
+        external
+        override
+        returns (bytes32 ruleId) 
+    {
+        PolicyStorage.Policy storage p = policyStorage.policy(policyId);
+        ruleId = p.scalarActive.ruleId;
+    }
+
+    /**
+     * @notice Inspect the policy ttl.
+     * @dev Use static call to inspect current values.
+     * @param policyId The unique identifier of the policy.
+     * @return ttl The active ttl of the policy.
+     */
+    function policyTtl(uint32 policyId) 
+        external
+        override
+        returns (uint32 ttl)
+    {
+        PolicyStorage.Policy storage p = policyStorage.policy(policyId);
+        ttl = p.scalarActive.ttl;
+    }
+
+    /**
+     * @notice Check if the policy allows counterparty approvals. 
+     * @dev Use static call to inspect current values.
+     * @param policyId The unique identifier of the policy.
+     * @return isAllowed True if the active policy configuration allows counterparty approvals. 
+     */
+    function policyAllowApprovedCounterparties(uint32 policyId) 
+        external
+        override
+        returns (bool isAllowed) 
+    {
+        isAllowed = policyStorage.policy(policyId).scalarActive.allowApprovedCounterparties;
+    }
+
+    /**
+     * @notice Inspect the policy disablement flag.
+     * @dev Use static calls to inspect current information.
+     * @param policyId The policyId.
+     * @return isDisabled True if the policy is disabled.
       */
-    function policyOwnerRole(uint32 policyId) public pure override returns (bytes32 ownerRole) {
-        ownerRole = bytes32(uint256(uint32(policyId)));
-    }
-
-    /**
-     * @param policyId The unique identifier of a Policy.
-     * @dev Use static calls to inspect current information.
-     * @return descriptionUtf8 Not used for any on-chain logic.
-     */
-    function policyDescription(uint32 policyId)
-        external
+    function policyDisabled(uint32 policyId) 
+        external 
+        view 
         override
-        returns (string memory descriptionUtf8)
+        returns (bool isDisabled) 
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        descriptionUtf8 = policyObj.scalarActive.descriptionUtf8;
+        isDisabled = policyStorage.policies[policyId].disabled;
     }
 
     /**
-     * @param policyId The unique identifier of a Policy.
-     * @dev Use static calls to inspect current information.
-     * @return ruleId Rule to enforce, defined in the RuleRegistry.
-     */
-    function policyRuleId(uint32 policyId) external override returns (bytes32 ruleId) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        ruleId = policyObj.scalarActive.ruleId;
-    }
-
-    /**
-     * @param policyId The unique identifier of a Policy.
-     * @dev Use static calls to inspect current information.
-     * @return ttl The maximum age of acceptable credentials.
-     */
-    function policyTtl(uint32 policyId) external override returns (uint128 ttl) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        ttl = policyObj.scalarActive.ttl;
-    }
-
-    /**
-     * @notice Inspect a policy grace period.
-     * @dev Use static calls to inspect current information.
-     * @return gracePeriod Seconds until policy changes take effect.
-     */
-    function policyGracePeriod(uint32 policyId) external override returns(uint128 gracePeriod) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        gracePeriod = policyObj.scalarActive.gracePeriod;
-    }
-
-    /**
-     * @notice Check the number of latest identity roots to accept, regardless of age.
-     * @param policyId The policy to inspect.
-     * @return acceptRoots The number of latest identity roots to accept unconditionally for the construction
-     of zero-knowledge proofs.
-     */
-    function policyAcceptRoots(uint32 policyId)
-        external
-        override
-        returns (uint16 acceptRoots)
-    {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        acceptRoots = policyObj.scalarActive.acceptRoots;
-    }
-
-    /**
-     * @notice Check if the policy allows user whitelisting.
+     * @notice A policy is deemed failed if all attestors or any wallet check has been
+     degraded for a period exceeding the policyDisablementPeriod.
+     * @dev Use static calls to inspect.
      * @param policyId The policy to inspect. 
-     * @return isAllowed True if whitelists can be used to override compliance checks. 
+     * @return canIndeed True if the policy can be disabled.
      */
-    function policyAllowUserWhitelists(uint32 policyId) external returns (bool isAllowed){
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        isAllowed = policyObj.scalarActive.allowUserWhitelists;
+    function policyCanBeDisabled(uint32 policyId) 
+        external
+        override 
+        returns (bool canIndeed) 
+    {
+        canIndeed = policyStorage.policy(policyId).policyHasFailed() &&
+            policyId != 0;
     }
 
     /**
-     * @notice Check if the policy is locked.
-     * @dev Use static calls to inspect current information.
-     * @return isLocked True if the policy cannot be changed
-     */
-    function policyLocked(uint32 policyId) external override returns (bool isLocked) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        isLocked = policyObj.scalarActive.locked;
-    }
-
-    /**
-     * @notice Inspect the schedule to implementing staged policy updates. 
+     * @notice Count the active policy attestors.
      * @dev Use static calls to inspect current information.
      * @param policyId The policy to inspect.
-     * @return deadline The scheduled time to active the pending policy update. 
-     */
-    function policyDeadline(uint32 policyId) external override returns (uint256 deadline) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        deadline = policyObj.deadline;
-    }
-
-    /**
-     * @param policyId The policy to inspect.
-     * @dev Use static calls to inspect current information.
      * @return count The count of acceptable Attestors for the Policy.
      */
     function policyAttestorCount(uint32 policyId) public override returns (uint256 count) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        count = policyObj.attestors.activeSet.count();
+        count = policyStorage.policy(policyId).attestors.activeSet.count();
     }
 
     /**
-     * @param policyId The Policy to inspect.
+     * @notice Inspect the active policy attestor at the index. 
      * @dev Use static calls to inspect current information.
+     * @param policyId The Policy to inspect.
      * @param index The list index to inspect.
      * @return attestor The address of a Attestor that is acceptable for the Policy.
      */
@@ -704,8 +782,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         returns (address attestor)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+       PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         if (index >= policyObj.attestors.activeSet.count())
             revert Unacceptable({
                 reason: "index"
@@ -714,20 +791,20 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
-     * @param policyId The policy to inspect.
+     * @notice Inspect the full list of active policy attestors. 
      * @dev Use static calls to inspect current information.
+     * @param policyId The policy to inspect.
      * @return attestors The list of attestors that are authoritative for the policy.
      */
     function policyAttestors(uint32 policyId) external override returns (address[] memory attestors) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        attestors = policyObj.attestors.activeSet.keyList;
+        attestors = policyStorage.policy(policyId).attestors.activeSet.keyList;
     }
 
     /**
+     * @notice Check if an attestor is active for the policy. 
+     * @dev Use static calls to inspect current information.
      * @param policyId The Policy to inspect.
      * @param attestor The address to inspect.
-     * @dev Use static calls to inspect current information.
      * @return isIndeed True if attestor is acceptable for the Policy, otherwise false.
      */
     function isPolicyAttestor(uint32 policyId, address attestor)
@@ -735,25 +812,23 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         returns (bool isIndeed)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        isIndeed = policyObj.attestors.activeSet.exists(attestor);
+        isIndeed = policyStorage.policy(policyId).attestors.activeSet.exists(attestor);
     }    
 
     /**
-     * @param policyId The policy to inspect.
+     * @notice Count the active wallet checks for the policy. 
      * @dev Use static calls to inspect current information.
-     * @return count The count of wallet checks for the Policy.
+     * @param policyId The policy to inspect.
+     * @return count The count of active wallet checks for the Policy.
      */
     function policyWalletCheckCount(uint32 policyId) public override returns (uint256 count) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        count = policyObj.walletChecks.activeSet.count();
+        count = policyStorage.policy(policyId).walletChecks.activeSet.count();
     }
 
     /**
-     * @param policyId The Policy to inspect.
+     * @notice Inspect the active wallet check at the index. 
      * @dev Use static calls to inspect current information.
+     * @param policyId The Policy to inspect.
      * @param index The list index to inspect.
      * @return walletCheck The address of a wallet check for the policy.
      */
@@ -762,8 +837,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         returns (address walletCheck)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
+        PolicyStorage.Policy storage policyObj = policyStorage.policy(policyId);
         if (index >= policyObj.walletChecks.activeSet.count())
             revert Unacceptable({
                 reason: "index"
@@ -772,17 +846,17 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
-     * @param policyId The policy to inspect.
+     * @notice Inspect the full list of active wallet checks for the policy. 
      * @dev Use static calls to inspect current information.
+     * @param policyId The policy to inspect.
      * @return walletChecks The list of walletCheck contracts that apply to the policy.
      */
     function policyWalletChecks(uint32 policyId) external override returns (address[] memory walletChecks) {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        walletChecks = policyObj.walletChecks.activeSet.keyList;
+        walletChecks = policyStorage.policy(policyId).walletChecks.activeSet.keyList;
     }
 
     /**
+     * @notice Check if a wallet check is active for the policy. 
      * @dev Use static calls to inspect current information.
      * @param policyId The Policy to inspect.
      * @param walletCheck The address to inspect.
@@ -793,13 +867,53 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         override
         returns (bool isIndeed)
     {
-        PolicyStorage.Policy storage policyObj = policyStorage.policyRawData(policyId);
-        policyStorage.processStaged(policyId);
-        isIndeed = policyObj.walletChecks.activeSet.exists(walletCheck);
-    }    
+        isIndeed = policyStorage.policy(policyId).walletChecks.activeSet.exists(walletCheck);
+    }
 
     /**
-     * @dev Does not check existance.
+     * @notice Count backdoors in a policy
+     * @dev Use static calls to inspect current information.
+     * @param policyId The policy to inspect. 
+     * @return count The count of backdoors in the policy.
+     */
+    function policyBackdoorCount(uint32 policyId) external override returns (uint256 count) {
+        count = policyStorage.policy(policyId).backdoors.activeSet.count();
+    }
+
+    /**
+     * @notice Iterate the backdoors in a policy.
+     * @dev Use static calls to inspect current information.
+     * @param policyId The policy to inspect. 
+     * @param index The index to inspect. 
+     * @return backdoorId The backdoor id at the index in the policy. 
+     */
+    function policyBackdoorAtIndex(uint32 policyId, uint256 index) external override returns (bytes32 backdoorId) {
+        backdoorId = policyStorage.policy(policyId).backdoors.activeSet.keyAtIndex(index);
+    }
+
+    /**
+     * @notice Inspect the full list of backdoors in a policy. 
+     * @dev Use static calls to inspect current information.
+     * @param policyId The policy to inspect. 
+     * @return backdoors The full list of backdoors in effect for the policy. 
+     */
+    function policyBackdoors(uint32 policyId) external override returns (bytes32[] memory backdoors) {
+        backdoors = policyStorage.policy(policyId).backdoors.activeSet.keyList;
+    }
+
+    /**
+     * @notice Check if a backdoor is in a policy. 
+     * @dev Use static calls to inspect current information.
+     * @param policyId The policy to inspect. 
+     * @param backdoorId The backdoor id to check for. 
+     * @return isIndeed True if the backdoor id is present in the policy. 
+     */
+    function isPolicyBackdoor(uint32 policyId, bytes32 backdoorId) external override returns (bool isIndeed) {
+        isIndeed = policyStorage.policy(policyId).backdoors.activeSet.exists(backdoorId);
+    }
+
+    /**
+     * @notice Count the policies in the system. 
      * @return count Existing policies in PolicyManager.
      */
     function policyCount() public view override returns (uint256 count) {
@@ -807,6 +921,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Check if a policyId exists in the system. 
      * @param policyId The unique identifier of a Policy.
      * @return isIndeed True if a Policy with policyId exists, otherwise false.
      */
@@ -815,6 +930,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Count the global attestors admitted into the system. 
      * @return count Total count of Attestors admitted to the global whitelist.
      */
     function globalAttestorCount() external view override returns (uint256 count) {
@@ -822,6 +938,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Inspect the global attestor at the index. 
      * @param index The list index to inspect.
      * @return attestor An Attestor address from the global whitelist.
      */
@@ -834,6 +951,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Check if an address is admitted to the global attestors list. 
      * @param attestor An address.
      * @return isIndeed True if the attestor is admitted to the global whitelist.
      */
@@ -842,6 +960,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Count wallet checks admitted to the global list. 
      * @return count Total count of wallet checks admitted to the global whitelist.
      */
     function globalWalletCheckCount() external view override returns (uint256 count) {
@@ -849,6 +968,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Inspect the global wallet check at the index. 
      * @param index The list index to inspect.
      * @return walletCheck A wallet check contract address from the global whitelist. 
      */
@@ -861,6 +981,7 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Check if an address is admitted to the global wallet check list. 
      * @param walletCheck A wallet check contract address to search for.
      * @return isIndeed True if the wallet check exists in the global whitelist, otherwise false.
      */
@@ -869,10 +990,45 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
     }
 
     /**
+     * @notice Count backdoors that have been admitted into the system. 
+     * @return count The number of backdoors in the system.
+     */
+    function globalBackdoorCount() external view override returns (uint256 count) {
+        count = policyStorage.backdoorSet.count();
+    }
+
+    /**
+     * @notice Iterate global backdoors.
+     * @param index The global backdoor index to inspect. 
+     * @return backdoorId The backdoorId at the index in the list of admitted backdoors. 
+     */
+    function globalBackdoorAtIndex(uint256 index) external view override returns (bytes32 backdoorId) {
+        backdoorId = policyStorage.backdoorSet.keyAtIndex(index);
+    }
+
+    /**
+     * @notice Check if a backdoorId exists in the global list of admitted backdoors. 
+     * @param backdoorId The backdoorId to check. 
+     * @return isIndeed True if the backdoorId exists in the list of globally admitted backdoors. 
+     */
+    function isGlobalBackdoor(bytes32 backdoorId) external view override returns (bool isIndeed) {
+        isIndeed = policyStorage.backdoorSet.exists(backdoorId);
+    }
+
+    /**
+     * @notice Inspect backdoorPubKey associated with the backdoorId.
+     * @param backdoorId The backdoorId to inspect. 
+     * @return pubKey The backdoor public key. 
+     */
+    function backdoorPubKey(bytes32 backdoorId) external view override returns (uint256[2] memory pubKey) {
+        pubKey = policyStorage.backdoorPubKey[backdoorId];
+    }
+
+    /**
+     * @notice Inspect the Uri for an attestor on the global attestor list. 
      * @param attestor An address.
      * @return uri The attestor uri if the address is an attestor.
      */
-
     function attestorUri(address attestor) external view override returns(string memory uri) {
         uri = policyStorage.attestorUris[attestor];
     }
@@ -893,5 +1049,14 @@ contract PolicyManager is IPolicyManager, KeyringAccessControl, Initializable {
         returns (bool doesIndeed)
     {
         doesIndeed = AccessControl.hasRole(role, user);
+    }
+
+    /**
+     * @notice Inspect the minimum policy disablement period.
+     * @return period The minimum policy disablement period.
+     * @dev The minimum policy disablement period is the minimum time that must pass before a policy can be disabled.
+     */
+    function minimumPolicyDisablementPeriod() external view override returns (uint256 period) {
+        period = policyStorage.minimumPolicyDisablementPeriod;
     }
 }

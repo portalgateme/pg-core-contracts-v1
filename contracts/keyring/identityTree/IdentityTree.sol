@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 import "../interfaces/IIdentityTree.sol";
-import "../access/KeyringAccessControl.sol";
+import "../degradable/Degradable.sol";
 import "../lib/Bytes32Set.sol";
 
 /**
@@ -13,7 +13,7 @@ import "../lib/Bytes32Set.sol";
  rely on for validity. 
  */
 
-contract IdentityTree is IIdentityTree, KeyringAccessControl { 
+contract IdentityTree is IIdentityTree, Degradable { 
 
     using Bytes32Set for Bytes32Set.Set;
 
@@ -22,7 +22,6 @@ contract IdentityTree is IIdentityTree, KeyringAccessControl {
     bytes32 private constant NULL_BYTES32 = bytes32(0);
     bytes32 public constant override ROLE_AGGREGATOR = keccak256("aggregator role");
 
-    mapping(bytes32 => uint256) public override merkleRootBirthday;
     Bytes32Set.Set merkleRootSet;
 
     modifier onlyAggregator() {
@@ -31,12 +30,23 @@ contract IdentityTree is IIdentityTree, KeyringAccessControl {
     }
 
     /**
-     @param trustedForwarder Contract address that is allowed to relay message signers.
+     * @param trustedForwarder_ Contract address that is allowed to relay message signers.
+     * @param policyManager_ The policy manager contract address.
+     * @param maximumConsentPeriod_ The maximum allowable user consent period.
      */
-    constructor(address trustedForwarder) KeyringAccessControl(trustedForwarder) {
-        if(trustedForwarder == NULL_ADDRESS)
-            revert Unacceptable("trustedForwarder cannot be empty");
+    constructor(
+        address trustedForwarder_,
+        address policyManager_,
+        uint256 maximumConsentPeriod_
+    ) 
+        Degradable(
+            trustedForwarder_,
+            policyManager_,
+            maximumConsentPeriod_
+        ) 
+    {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        emit Deployed(_msgSender(), trustedForwarder_, policyManager_, maximumConsentPeriod);
     }
 
     /**
@@ -54,13 +64,34 @@ contract IdentityTree is IIdentityTree, KeyringAccessControl {
             revert Unacceptable({
                 reason: "merkle root cannot be empty"
             });
-        if (birthday < latestBirthday()) 
+        if (birthday < lastUpdate) 
             revert Unacceptable({
                 reason: "birthday precedes previously recorded birthday"
             });
-        merkleRootBirthday[merkleRoot] = birthday;
+        _recordUpdate(merkleRoot, birthday);
         merkleRootSet.insert(merkleRoot, "IdentityTree::setMerkleRoot");
         emit SetMerkleRootBirthday(merkleRoot, birthday);
+    }
+
+    /**
+     * @notice Inspect the Identity Tree
+     * @dev Use static calls to inspect.
+     * @param observer The observer for degradation mitigation consent. 
+     * @param merkleRoot The merkle root to inspect. 
+     * @param admissionPolicyId The admission policy for the credential to inspect.
+     * @return passed True if a valid merkle root exists or if mitigation measures are applicable.
+     */
+    function checkRoot(
+        address observer, 
+        bytes32 merkleRoot,
+        uint32 admissionPolicyId
+    ) external override returns (bool passed) {
+        
+        passed = _checkKey(
+            observer,
+            merkleRoot,
+            admissionPolicyId
+        );
     }
 
     /**
@@ -90,27 +121,6 @@ contract IdentityTree is IIdentityTree, KeyringAccessControl {
      */
     function isMerkleRoot(bytes32 merkleRoot) external view override returns (bool isIndeed) {
         isIndeed = merkleRootSet.exists(merkleRoot);
-    }
-
-    /**
-     * @notice Returns the count of roots recorded after the root to inspect.
-     * @dev Returns 2 ^ 256 - 1 if merkle root is not recorded.
-     * @param merkleRoot The root to inspect.
-     * @return successors The count of roots recorded after the root to inspect.
-     */
-    function merkleRootSuccessors(bytes32 merkleRoot) external view override returns (uint256 successors) {
-        if (!merkleRootSet.exists(merkleRoot)) return INFINITY;
-        successors = merkleRootSet.count() - merkleRootSet.keyPointers[merkleRoot] - 1;
-    }
-
-    /**
-     @notice Return the latest birthday recorded.
-     @return birthday The birthday of the latest root recorded.
-     */
-    function latestBirthday() public view override returns (uint256 birthday) {
-        if (merkleRootSet.count() > 0) {
-            birthday = merkleRootBirthday[merkleRootSet.keyAtIndex(merkleRootSet.count() - 1)];
-        }
     }
 
     /**

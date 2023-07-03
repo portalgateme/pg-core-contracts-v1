@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import "../interfaces/IAuthorizationProofVerifier.sol";
-import "../interfaces/IIdentityConstructionProofVerifier.sol";
-import "../interfaces/IIdentityMembershipProofVerifier.sol";
+import "../interfaces/IKeyringProofVerifier.sol";
 import "../interfaces/IKeyringZkVerifier.sol";
 
 /**
@@ -29,25 +27,20 @@ contract KeyringZkVerifier is IKeyringZkVerifier {
         address authorisationProofVerifier
     ) {
         if (identityConstructionProofVerifier == NULL_ADDRESS)
-            revert Unacceptable({
-                reason: "identityConstructionProofVerifier cannot be empty"
-            });
+            revert Unacceptable({ reason: "identityConstructionProofVerifier cannot be empty" });
         if (membershipProofVerifier == NULL_ADDRESS)
-            revert Unacceptable({
-                reason: "membershipProofVerifier cannot be empty"
-            });
+            revert Unacceptable({ reason: "membershipProofVerifier cannot be empty" });
         if (authorisationProofVerifier == NULL_ADDRESS)
-            revert Unacceptable({
-                reason: "authorisationProofVerifier cannot be empty"
-            });
+            revert Unacceptable({ reason: "authorisationProofVerifier cannot be empty" });
         IDENTITY_CONSTRUCTION_PROOF_VERIFIER = identityConstructionProofVerifier;
         IDENTITY_MEMBERSHIP_PROOF_VERIFIER = membershipProofVerifier;
         AUTHORIZATION_PROOF_VERIFIER = authorisationProofVerifier;
         emit Deployed(
-            msg.sender, 
-            identityConstructionProofVerifier, 
-            membershipProofVerifier, 
-            authorisationProofVerifier);
+            msg.sender,
+            identityConstructionProofVerifier,
+            membershipProofVerifier,
+            authorisationProofVerifier
+        );
     }
 
     /**
@@ -71,19 +64,30 @@ contract KeyringZkVerifier is IKeyringZkVerifier {
      @notice Check correct construction of an identity commitment.
      @param constructionProof Proof of correct construction of the identity commitment as defined in 
      IKeyringZkVerifier.
+     @dev input order:
+            NOTE - input order
+            [
+                constructionProof.policyCommitment,
+                constructionProof.maxAddresses,
+                constructionProof.regimeKey,
+                constructionProof.identityPK,
+                constructionProof.identityCommitment,
+                constructionProof.cs
+            ]
      @return verified True if the construction proof is valid.
      */
-    function checkIdentityConstructionProof(IdentityConstructionProof calldata constructionProof)
-        external
-        view
-        override
-        returns (bool verified)
-    {
-        verified = IIdentityConstructionProofVerifier(IDENTITY_CONSTRUCTION_PROOF_VERIFIER).verifyProof(
+    function checkIdentityConstructionProof(
+        IdentityConstructionProof calldata constructionProof
+    ) external view override returns (bool verified) {
+        uint256[] memory input = new uint256[](71);
+        for(uint256 i=0; i<71; i++) {
+            input[i] = constructionProof.inputs[i];
+        }
+        verified = IKeyringProofVerifier(IDENTITY_CONSTRUCTION_PROOF_VERIFIER).verifyProof(
             constructionProof.proof.a,
             constructionProof.proof.b,
             constructionProof.proof.c,
-            [constructionProof.identity, constructionProof.policyCommitment, constructionProof.maxAddresses]
+            input
         );
     }
 
@@ -92,29 +96,21 @@ contract KeyringZkVerifier is IKeyringZkVerifier {
      @param membershipProof Proof of membership as defined in IKeyringZkVerifier.
      @return verified True if the identity commitment is a member of the identity tree.
      */
-    function checkIdentityMembershipProof(IdentityMembershipProof calldata membershipProof)
-        public
-        view
-        override
-        returns (bool verified)
-    {
-        try
-            IIdentityMembershipProofVerifier(IDENTITY_MEMBERSHIP_PROOF_VERIFIER).verifyProof(
-                membershipProof.proof.a,
-                membershipProof.proof.b,
-                membershipProof.proof.c,
-                [
-                    membershipProof.root,
-                    membershipProof.nullifierHash,
-                    membershipProof.signalHash,
-                    membershipProof.externalNullifier
-                ]
-            )
-        {
-            verified = true;
-        } catch {
-            verified = false;
-        }
+    function checkIdentityMembershipProof(
+        IdentityMembershipProof calldata membershipProof
+    ) public view override returns (bool verified) {
+        uint256[] memory input = new uint256[](4); 
+        input[0] = membershipProof.root;
+        input[1] = membershipProof.nullifierHash;
+        input[2] = membershipProof.signalHash;
+        input[3] = membershipProof.externalNullifier;
+        
+        verified = IKeyringProofVerifier(IDENTITY_MEMBERSHIP_PROOF_VERIFIER).verifyProof(
+            membershipProof.proof.a,
+            membershipProof.proof.b,
+            membershipProof.proof.c,
+            input
+        );
     }
 
     /**
@@ -122,23 +118,27 @@ contract KeyringZkVerifier is IKeyringZkVerifier {
      @param authorisationProof Proof of authorisation as defined in IKeyringZkVerifier.
      @return verified True if the trader wallet is authorised for all policies in the disclosure.
      */
-    function checkIdentityAuthorisationProof(IdentityAuthorisationProof calldata authorisationProof)
-        public
-        view
-        override
-        returns (bool verified)
-    {
-        verified = IAuthorizationProofVerifier(AUTHORIZATION_PROOF_VERIFIER).verifyProof(
-                    authorisationProof.proof.a,
-                    authorisationProof.proof.b,
-                    authorisationProof.proof.c,
-                    [
-                        authorisationProof.externalNullifier,
-                        authorisationProof.nullifierHash,
-                        authorisationProof.policyDisclosures[0],
-                        authorisationProof.policyDisclosures[1],
-                        authorisationProof.tradingAddress
-                    ]
-                );
+    function checkIdentityAuthorisationProof(
+        IdentityAuthorisationProof calldata authorisationProof
+    ) public view override returns (bool verified) {
+        uint256[] memory input = new uint256[](11);
+        input[0] = authorisationProof.backdoor.c1[0];
+        input[1] = authorisationProof.backdoor.c1[1];
+        input[2] = authorisationProof.backdoor.c2[0];
+        input[3] = authorisationProof.backdoor.c2[1];
+        input[4] = authorisationProof.externalNullifier;
+        input[5] = authorisationProof.nullifierHash;
+        input[6] = authorisationProof.policyDisclosures[0];
+        input[7] = authorisationProof.policyDisclosures[1];
+        input[8] = authorisationProof.tradingAddress;
+        input[9] = authorisationProof.regimeKey[0];
+        input[10] = authorisationProof.regimeKey[1];
+        
+        verified = IKeyringProofVerifier(AUTHORIZATION_PROOF_VERIFIER).verifyProof(
+            authorisationProof.proof.a,
+            authorisationProof.proof.b,
+            authorisationProof.proof.c,
+            input
+        );
     }
 }

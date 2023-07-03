@@ -4,15 +4,28 @@ pragma solidity 0.8.14;
 
 interface IWalletCheck {
 
-    error Unacceptable(string reason);
+    event Deployed(
+        address indexed admin, 
+        address trustedForwarder,
+        address policyManager,
+        uint256 maximumConsentPeriod,
+        string uri);
 
-    event Deployed(address admin, address trustedForwarder);
+    event UpdateUri(address indexed admin, string uri);
     
-    event SetWalletWhitelist(address admin, address wallet, bool isWhitelisted);
+    event SetWalletCheck(address indexed admin, address indexed wallet, bool isWhitelisted);
 
-    function ROLE_WALLETCHECK_ADMIN() external view returns (bytes32);
+    function ROLE_WALLETCHECK_LIST_ADMIN() external view returns (bytes32);
 
-    function birthday(address wallet) external view returns(uint256 timestamp);
+    function ROLE_WALLETCHECK_META_ADMIN() external view returns (bytes32);
 
-    function setWalletWhitelist(address wallet, bool whitelisted, uint256 timestamp) external;
+    function updateUri(string calldata uri_) external;
+
+    function setWalletCheck(address wallet, bool whitelisted, uint256 timestamp) external;
+
+    function checkWallet(
+        address observer, 
+        address wallet,
+        uint32 admissionPolicyId
+    ) external returns (bool passed);
 }

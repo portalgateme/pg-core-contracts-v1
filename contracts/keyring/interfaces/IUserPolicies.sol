@@ -4,27 +4,29 @@ pragma solidity 0.8.14;
 
 interface IUserPolicies {
 
-    error Unacceptable(string reason);
-
     event Deployed(address trustedForwarder, address policyManager);
 
     event SetUserPolicy(address indexed trader, uint32 indexed policyId);
 
-    event AddTraderWhitelisted(address indexed, address indexed whitelisted);
+    event AddApprovedCounterparty(address indexed, address indexed approved);
 
-    event RemoveTraderWhitelisted(address indexed, address indexed whitelisted);
+    event RemoveApprovedCounterparty(address indexed, address indexed approved);
 
     function userPolicies(address trader) external view returns (uint32);
 
     function setUserPolicy(uint32 policyId) external;
 
-    function addWhitelistedTrader(address whitelisted) external;
+    function addApprovedCounterparty(address approved) external;
 
-    function removeWhitelistedTrader(address whitelisted) external;
+    function addApprovedCounterparties(address[] calldata approved) external;
 
-    function whitelistedTraderCount(address trader) external view returns (uint256 count);
+    function removeApprovedCounterparty(address approved) external;
 
-    function whitelistedTraderAtIndex(address trader, uint256 index) external view returns (address whitelisted);
+    function removeApprovedCounterparties(address[] calldata approved) external;
 
-    function isWhitelisted(address trader, address counterparty) external view returns (bool isIndeed);
+    function approvedCounterpartyCount(address trader) external view returns (uint256 count);
+
+    function approvedCounterpartyAtIndex(address trader, uint256 index) external view returns (address approved);
+
+    function isApproved(address trader, address counterparty) external view returns (bool isIndeed);
 }

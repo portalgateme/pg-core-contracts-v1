@@ -18,7 +18,7 @@ library Bytes32Set {
 
     string private constant MODULE = "Bytes32Set";
 
-    error SetConsistency(string module, string method, string reason, string context);
+    error Bytes32SetConsistency(string module, string method, string reason, string context);
 
     /**
      * @notice Insert a key to store.
@@ -33,7 +33,7 @@ library Bytes32Set {
         string memory context
     ) internal {
         if (exists(self, key))
-            revert SetConsistency({
+            revert Bytes32SetConsistency({
                 module: MODULE,
                 method: "insert",
                 reason: "exists",
@@ -41,6 +41,34 @@ library Bytes32Set {
             });
         self.keyPointers[key] = self.keyList.length;
         self.keyList.push(key);
+    }
+
+
+    /**
+     * @notice Remove a key from the store.
+     * @dev The key to remove must exist.
+     * @param self A Set struct
+     * @param key An address to remove from the Set.
+     * @param context A message string about interpretation of the issue. Normally the calling function.
+     */
+    function remove(
+        Set storage self,
+        bytes32 key,
+        string memory context
+    ) internal {
+        if (!exists(self, key))
+            revert Bytes32SetConsistency({
+                module: MODULE,
+                method: "remove",
+                reason: "does not exist",
+                context: context
+            });
+        bytes32 keyToMove = self.keyList[count(self) - 1];
+        uint256 rowToReplace = self.keyPointers[key];
+        self.keyPointers[keyToMove] = rowToReplace;
+        self.keyList[rowToReplace] = keyToMove;
+        delete self.keyPointers[key];
+        self.keyList.pop();
     }
 
     /**

@@ -21,8 +21,6 @@ interface IRuleRegistry {
         bool toxic;
     }
 
-    error Unacceptable(string reason);
-
     event RuleRegistryDeployed(address deployer, address trustedForwarder);
 
     event RuleRegistryInitialized(

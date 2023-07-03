@@ -4,9 +4,11 @@ pragma solidity 0.8.14;
 
 interface IKeyringCredentials {
     
-    error Unacceptable(string reason);
-
-    event CredentialsDeployed(address deployer, address trustedForwarder, address policyManager);
+    event CredentialsDeployed(
+        address deployer, 
+        address trustedForwarder, 
+        address policyManager, 
+        uint256 maximumConsentPeriod);
 
     event CredentialsInitialized(address admin);
 
@@ -20,21 +22,21 @@ interface IKeyringCredentials {
 
     function init() external;
 
-    function cache(
-        uint8 version, 
-        address trader, 
-        uint32 admissionPolicyId
-    ) external view returns (uint256);
-
     function setCredential(
         address trader,  
         uint32 admissionPolicyId,
         uint256 timestamp
     ) external;
 
-    function getCredential(
-        uint8 version, 
-        address trader, 
+    function checkCredential(
+        address observer,
+        address subject,
         uint32 admissionPolicyId
-    ) external view returns (uint256);
+    ) external returns (bool passed);
+
+    function keyGen(
+        address trader,
+        uint32 admissionPolicyId
+    ) external pure returns (bytes32 key);
+
 }

@@ -26,7 +26,6 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 contract RuleRegistry is IRuleRegistry, KeyringAccessControl, Initializable {
     using Bytes32Set for Bytes32Set.Set;
 
-    address private constant NULL_ADDRESS = address(0);
     bytes32 private _universeRule;
     bytes32 private _emptyRule;
 
@@ -39,10 +38,6 @@ contract RuleRegistry is IRuleRegistry, KeyringAccessControl, Initializable {
      * @param trustedForwarder Contract address that is allowed to relay message signers.
      */
     constructor(address trustedForwarder) KeyringAccessControl(trustedForwarder) {
-        if (trustedForwarder == NULL_ADDRESS)
-            revert Unacceptable({
-                reason: "trustedForwarder cannot be empty"
-            });
         emit RuleRegistryDeployed(_msgSender(), trustedForwarder);
     }
 

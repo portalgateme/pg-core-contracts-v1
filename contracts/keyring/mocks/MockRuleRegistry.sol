@@ -16,7 +16,6 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 contract MockRuleRegistry is IRuleRegistry, KeyringAccessControl, Initializable {
     using Bytes32Set for Bytes32Set.Set;
     
-    address private constant NULL_ADDRESS = address(0);
     bytes32 private _universeRule;
     bytes32 private _emptyRule;
 
@@ -33,7 +32,6 @@ contract MockRuleRegistry is IRuleRegistry, KeyringAccessControl, Initializable 
         bytes32 universeRule,
         bytes32 emptyRule
     ) KeyringAccessControl(trustedForwarder) {
-        if (trustedForwarder == NULL_ADDRESS) revert Unacceptable({ reason: "trustedForwarder cannot be empty" });
         _universeRule = universeRule;
         _emptyRule = emptyRule;
         emit RuleRegistryDeployed(_msgSender(), trustedForwarder);

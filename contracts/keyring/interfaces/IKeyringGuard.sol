@@ -8,7 +8,14 @@ pragma solidity 0.8.14;
 
 interface IKeyringGuard {
 
-    error Unacceptable(string reason);
+    struct KeyringConfig {
+        address trustedForwarder;
+        address collateralToken;
+        address keyringCredentials;
+        address policyManager;
+        address userPolicies;
+        address exemptionsManager;
+    }
 
     event KeyringGuardConfigured(
         address keyringCredentials,
@@ -19,15 +26,9 @@ interface IKeyringGuard {
         bytes32 emptyRule
     );
 
-    event WhitelistAddress(address admin);
+    function checkZKPIICache(address observer, address subject) external returns (bool passed);
 
-    function whitelistAddressCount() external view returns (uint256 count);
+    function checkTraderWallet(address observer, address subject) external returns (bool passed);
 
-    function whitelistAddressAtIndex(uint256 index) external view returns (address whitelisted);
-
-    function isWhitelisted(address checkAddress) external view returns (bool isIndeed);
-
-    function checkCache(address trader) external returns (bool isIndeed);
-
-    function checkGuard(address from, address to) external returns (bool isAuthorized);
+    function isAuthorized(address from, address to) external returns (bool passed);
 }
