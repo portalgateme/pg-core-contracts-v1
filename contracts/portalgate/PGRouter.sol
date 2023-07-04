@@ -72,7 +72,11 @@ contract PGRouter is Initializable {
       token.safeTransferFrom(msg.sender, address(this), _tornado.denomination());
     }
     _tornado.deposit{ value: msg.value }(_commitment);
-    tornadoTrees.registerDeposit(address(_tornado), _commitment);
+
+    if (state == InstanceRegistry.InstanceState.MINABLE) {
+      tornadoTrees.registerDeposit(address(_tornado), _commitment);
+    }
+
     emit EncryptedNote(msg.sender, _encryptedNote);
   }
 
@@ -117,7 +121,10 @@ contract PGRouter is Initializable {
 
 
     _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
-    tornadoTrees.registerWithdrawal(address(_tornado), _nullifierHash);
+
+    if (state == InstanceRegistry.InstanceState.MINABLE) {
+      tornadoTrees.registerWithdrawal(address(_tornado), _nullifierHash);
+    }
   }
 
   /**
