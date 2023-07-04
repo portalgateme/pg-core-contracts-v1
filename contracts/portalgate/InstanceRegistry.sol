@@ -14,7 +14,8 @@ contract InstanceRegistry {
 
     enum InstanceState {
         DISABLED,
-        ENABLED
+        ENABLED, // is enabled but mining is disabled
+        MINABLE // is enabled and mining is enabled
     }
 
     struct Instance {

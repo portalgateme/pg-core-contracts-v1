@@ -3,5 +3,11 @@
 /* eslint-disable */
 export type { ENSRegistry } from "./ENSRegistry";
 export type { ENSResolver } from "./ENSResolver";
+export type { IBatchTreeUpdateVerifier } from "./IBatchTreeUpdateVerifier";
+export type { IHasher } from "./IHasher";
+export type { IPGAT } from "./IPGAT";
 export type { IRelayerRegistry } from "./IRelayerRegistry";
+export type { IRewardSwap } from "./IRewardSwap";
 export type { ITornadoInstance } from "./ITornadoInstance";
+export type { ITornadoTrees } from "./ITornadoTrees";
+export type { IVerifier } from "./IVerifier";

@@ -38,7 +38,7 @@ export interface ERC20TornadoInterface extends utils.Interface {
     "deposit(bytes32)": FunctionFragment;
     "filledSubtrees(uint256)": FunctionFragment;
     "getLastRoot()": FunctionFragment;
-    "hashLeftRight(address,bytes32,bytes32)": FunctionFragment;
+    "hashLeftRight(bytes32,bytes32)": FunctionFragment;
     "hasher()": FunctionFragment;
     "isKnownRoot(bytes32)": FunctionFragment;
     "isSpent(bytes32)": FunctionFragment;
@@ -74,7 +74,7 @@ export interface ERC20TornadoInterface extends utils.Interface {
       | "getLastRoot"
       | "getLastRoot()"
       | "hashLeftRight"
-      | "hashLeftRight(address,bytes32,bytes32)"
+      | "hashLeftRight(bytes32,bytes32)"
       | "hasher"
       | "hasher()"
       | "isKnownRoot"
@@ -175,19 +175,11 @@ export interface ERC20TornadoInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "hashLeftRight",
-    values: [
-      PromiseOrValue<string>,
-      PromiseOrValue<BytesLike>,
-      PromiseOrValue<BytesLike>
-    ]
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<BytesLike>]
   ): string;
   encodeFunctionData(
-    functionFragment: "hashLeftRight(address,bytes32,bytes32)",
-    values: [
-      PromiseOrValue<string>,
-      PromiseOrValue<BytesLike>,
-      PromiseOrValue<BytesLike>
-    ]
+    functionFragment: "hashLeftRight(bytes32,bytes32)",
+    values: [PromiseOrValue<BytesLike>, PromiseOrValue<BytesLike>]
   ): string;
   encodeFunctionData(functionFragment: "hasher", values?: undefined): string;
   encodeFunctionData(functionFragment: "hasher()", values?: undefined): string;
@@ -346,7 +338,7 @@ export interface ERC20TornadoInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "hashLeftRight(address,bytes32,bytes32)",
+    functionFragment: "hashLeftRight(bytes32,bytes32)",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "hasher", data: BytesLike): Result;
@@ -531,14 +523,12 @@ export interface ERC20Tornado extends BaseContract {
     "getLastRoot()"(overrides?: CallOverrides): Promise<[string]>;
 
     hashLeftRight(
-      _hasher: PromiseOrValue<string>,
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<[string]>;
 
-    "hashLeftRight(address,bytes32,bytes32)"(
-      _hasher: PromiseOrValue<string>,
+    "hashLeftRight(bytes32,bytes32)"(
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -637,12 +627,12 @@ export interface ERC20Tornado extends BaseContract {
     ): Promise<ContractTransaction>;
 
     zeros(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[string]>;
 
     "zeros(uint256)"(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[string]>;
   };
@@ -702,14 +692,12 @@ export interface ERC20Tornado extends BaseContract {
   "getLastRoot()"(overrides?: CallOverrides): Promise<string>;
 
   hashLeftRight(
-    _hasher: PromiseOrValue<string>,
     _left: PromiseOrValue<BytesLike>,
     _right: PromiseOrValue<BytesLike>,
     overrides?: CallOverrides
   ): Promise<string>;
 
-  "hashLeftRight(address,bytes32,bytes32)"(
-    _hasher: PromiseOrValue<string>,
+  "hashLeftRight(bytes32,bytes32)"(
     _left: PromiseOrValue<BytesLike>,
     _right: PromiseOrValue<BytesLike>,
     overrides?: CallOverrides
@@ -808,12 +796,12 @@ export interface ERC20Tornado extends BaseContract {
   ): Promise<ContractTransaction>;
 
   zeros(
-    i: PromiseOrValue<BigNumberish>,
+    arg0: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<string>;
 
   "zeros(uint256)"(
-    i: PromiseOrValue<BigNumberish>,
+    arg0: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<string>;
 
@@ -873,14 +861,12 @@ export interface ERC20Tornado extends BaseContract {
     "getLastRoot()"(overrides?: CallOverrides): Promise<string>;
 
     hashLeftRight(
-      _hasher: PromiseOrValue<string>,
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<string>;
 
-    "hashLeftRight(address,bytes32,bytes32)"(
-      _hasher: PromiseOrValue<string>,
+    "hashLeftRight(bytes32,bytes32)"(
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -979,12 +965,12 @@ export interface ERC20Tornado extends BaseContract {
     ): Promise<void>;
 
     zeros(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<string>;
 
     "zeros(uint256)"(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<string>;
   };
@@ -1071,14 +1057,12 @@ export interface ERC20Tornado extends BaseContract {
     "getLastRoot()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     hashLeftRight(
-      _hasher: PromiseOrValue<string>,
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    "hashLeftRight(address,bytes32,bytes32)"(
-      _hasher: PromiseOrValue<string>,
+    "hashLeftRight(bytes32,bytes32)"(
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -1177,12 +1161,12 @@ export interface ERC20Tornado extends BaseContract {
     ): Promise<BigNumber>;
 
     zeros(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     "zeros(uint256)"(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
@@ -1247,14 +1231,12 @@ export interface ERC20Tornado extends BaseContract {
     "getLastRoot()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     hashLeftRight(
-      _hasher: PromiseOrValue<string>,
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    "hashLeftRight(address,bytes32,bytes32)"(
-      _hasher: PromiseOrValue<string>,
+    "hashLeftRight(bytes32,bytes32)"(
       _left: PromiseOrValue<BytesLike>,
       _right: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -1353,12 +1335,12 @@ export interface ERC20Tornado extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     zeros(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     "zeros(uint256)"(
-      i: PromiseOrValue<BigNumberish>,
+      arg0: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };

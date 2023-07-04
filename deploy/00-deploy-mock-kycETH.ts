@@ -1,7 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers, network } from 'hardhat'
-import { DeployTags } from '../types/tags.enum'
+import { network } from 'hardhat'
+import { DeployTags, onlyLocalNetwork, baseDeployOptions } from '../utils/deploy'
 
 const deployMockKycETH: DeployFunction = async ({
   deployments,
@@ -11,24 +11,25 @@ const deployMockKycETH: DeployFunction = async ({
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const MockTrustedForwarder = await deployments.get('MockTrustedForwarder')
-  const MockKeyringCredentials = await deployments.get('MockKeyringCredentials')
-  const MockPolicyManager = await deployments.get('MockPolicyManager')
-  const MockUserPolicies = await deployments.get('MockUserPolicies')
+  onlyLocalNetwork(chainId)
+
+  const mockTrustedForwarder = await deployments.get('MockTrustedForwarder')
+  const mockKeyringCredentials = await deployments.get('MockKeyringCredentials')
+  const mockPolicyManager = await deployments.get('MockPolicyManager')
+  const mockUserPolicies = await deployments.get('MockUserPolicies')
 
   await deploy('KycETH', {
     contract: 'contracts/portalgate/KycETH.sol:KycETH',
     from: deployer,
     args: [
-      MockTrustedForwarder.address,
-      MockKeyringCredentials.address,
-      MockPolicyManager.address,
-      MockUserPolicies.address,
+      mockTrustedForwarder.address,
+      mockKeyringCredentials.address,
+      mockPolicyManager.address,
+      mockUserPolicies.address,
       1,
     ],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
     gasLimit: 5000000,
+    ...baseDeployOptions(chainId),
   })
 }
 

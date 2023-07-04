@@ -2,8 +2,9 @@ import { expect } from 'chai'
 
 import { setup } from './tools/setup'
 import { InstanceRegistry } from '../generated-types/ethers'
-import { deployInstances, formatToContractInput } from '../utils/deployInstances'
 import { cast } from './helpers/caster'
+import { ethers } from 'hardhat'
+import { formatToContractInput } from '../utils/instances'
 
 const format = (instances: any) => {
   return formatToContractInput(instances.deployed, 0, 0, 100)
@@ -114,16 +115,15 @@ describe('InstanceRegistry', async function () {
       it('should return all instances', async function () {
         const { InstanceRegistry, deployer, instances } = await setup()
 
-        const getInstancesPrev = await InstanceRegistry.getAllInstances()
+        const contractInstances = await InstanceRegistry.getAllInstances()
+        const expectedInstances = formatToContractInput(
+          instances.deployed,
+          0,
+          0,
+          ethers.BigNumber.from(100000),
+        )
 
-        const formattedInstances = format(instances)
-        const [formattedInstance] = formattedInstances
-
-        await InstanceRegistry.initInstances(formattedInstances)
-
-        const getInstances = await InstanceRegistry.getAllInstances()
-
-        expect(cast(getInstances)).to.deep.equal([...cast(getInstancesPrev), ...formattedInstances])
+        expect(cast(contractInstances)).to.deep.equal(expectedInstances)
       })
     })
 

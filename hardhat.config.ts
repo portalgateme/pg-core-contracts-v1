@@ -1,41 +1,33 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, task } from 'hardhat/config'
 
-import "@typechain/hardhat";
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-ganache";
-import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-deploy";
+import '@typechain/hardhat'
+import '@nomiclabs/hardhat-ethers'
+import '@nomiclabs/hardhat-ganache'
+import '@nomicfoundation/hardhat-toolbox'
+import 'hardhat-deploy'
 
-import * as dotenv from "dotenv";
-dotenv.config();
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 function typechainTarget() {
-  const target = process.env.TYPECHAIN_TARGET;
-  return target == "" || target == undefined ? "ethers-v5" : target;
+  const target = process.env.TYPECHAIN_TARGET
+  return target == '' || target == undefined ? 'ethers-v5' : target
 }
 
 function forceTypechain() {
-  return process.env.TYPECHAIN_FORCE == "true";
+  return process.env.TYPECHAIN_FORCE == 'true'
 }
 
 function privateKey() {
-  return process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [];
+  return process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
 }
 
-const SOL_COMPILER_VERSIONS = [
-  "0.6.11",
-  "0.6.12",
-  "0.7.6",
-  "0.8.6",
-  "0.8.7",
-  "0.8.14",
-  "0.8.19",
-];
+const SOL_COMPILER_VERSIONS = ['0.6.11', '0.6.12', '0.7.6', '0.8.6', '0.8.7', '0.8.14', '0.8.19']
 
 const config: HardhatUserConfig = {
   networks: {
     hardhat: {
-      initialDate: "1970-01-01T00:00:00Z",
+      initialDate: '1970-01-01T00:00:00Z',
       chainId: 31337,
       allowUnlimitedContractSize: false,
       accounts: {
@@ -43,8 +35,8 @@ const config: HardhatUserConfig = {
       },
     },
     localhost: {
-      url: "http://127.0.0.1:8545",
-      initialDate: "1970-01-01T00:00:00Z",
+      url: 'http://127.0.0.1:8545',
+      initialDate: '1970-01-01T00:00:00Z',
       gasMultiplier: 1.2,
       chainId: 31337,
       allowUnlimitedContractSize: false,
@@ -55,10 +47,10 @@ const config: HardhatUserConfig = {
       gasMultiplier: 1.2,
       chainId: 5,
       saveDeployments: true,
-      tags: ["stage"],
+      tags: ['stage'],
       verify: {
         etherscan: {
-          apiUrl: "https://api-goerli.etherscan.io/",
+          apiUrl: 'https://api-goerli.etherscan.io/',
         },
       },
     },
@@ -67,10 +59,10 @@ const config: HardhatUserConfig = {
       accounts: privateKey(),
       chainId: 1,
       saveDeployments: true,
-      tags: ["stage"],
+      tags: ['stage'],
       verify: {
         etherscan: {
-          apiUrl: "https://api.etherscan.io/",
+          apiUrl: 'https://api.etherscan.io/',
         },
       },
     },
@@ -92,7 +84,7 @@ const config: HardhatUserConfig = {
     })),
   },
   typechain: {
-    outDir: `generated-types/${typechainTarget().split("-")[0]}`,
+    outDir: `generated-types/${typechainTarget().split('-')[0]}`,
     target: typechainTarget(),
     alwaysGenerateOverloads: true,
     discriminateTypes: true,
@@ -103,6 +95,18 @@ const config: HardhatUserConfig = {
       default: 0,
     },
   },
-};
+  mocha: {
+    timeout: 90000,
+    color: true,
+  },
+}
 
-export default config;
+task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
+  const accounts = await hre.ethers.getSigners()
+
+  for (const account of accounts) {
+    console.log(account.address)
+  }
+})
+
+export default config

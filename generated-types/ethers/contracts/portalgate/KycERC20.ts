@@ -41,6 +41,7 @@ export interface KycERC20Interface extends utils.Interface {
     "decimals()": FunctionFragment;
     "decreaseAllowance(address,uint256)": FunctionFragment;
     "depositFor(address,uint256)": FunctionFragment;
+    "eip712Domain()": FunctionFragment;
     "emptyRule()": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
@@ -95,6 +96,8 @@ export interface KycERC20Interface extends utils.Interface {
       | "decreaseAllowance(address,uint256)"
       | "depositFor"
       | "depositFor(address,uint256)"
+      | "eip712Domain"
+      | "eip712Domain()"
       | "emptyRule"
       | "emptyRule()"
       | "getRoleAdmin"
@@ -241,6 +244,14 @@ export interface KycERC20Interface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "depositFor(address,uint256)",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "eip712Domain",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "eip712Domain()",
+    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "emptyRule", values?: undefined): string;
   encodeFunctionData(
@@ -532,6 +543,14 @@ export interface KycERC20Interface extends utils.Interface {
     functionFragment: "depositFor(address,uint256)",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "eip712Domain",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "eip712Domain()",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "emptyRule", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "emptyRule()",
@@ -704,6 +723,7 @@ export interface KycERC20Interface extends utils.Interface {
 
   events: {
     "Approval(address,address,uint256)": EventFragment;
+    "EIP712DomainChanged()": EventFragment;
     "KeyringGuardConfigured(address,address,address,uint32,bytes32,bytes32)": EventFragment;
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
@@ -716,6 +736,8 @@ export interface KycERC20Interface extends utils.Interface {
   getEvent(
     nameOrSignatureOrTopic: "Approval(address,address,uint256)"
   ): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "EIP712DomainChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "EIP712DomainChanged()"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "KeyringGuardConfigured"): EventFragment;
   getEvent(
     nameOrSignatureOrTopic: "KeyringGuardConfigured(address,address,address,uint32,bytes32,bytes32)"
@@ -751,6 +773,15 @@ export type ApprovalEvent = TypedEvent<
 >;
 
 export type ApprovalEventFilter = TypedEventFilter<ApprovalEvent>;
+
+export interface EIP712DomainChangedEventObject {}
+export type EIP712DomainChangedEvent = TypedEvent<
+  [],
+  EIP712DomainChangedEventObject
+>;
+
+export type EIP712DomainChangedEventFilter =
+  TypedEventFilter<EIP712DomainChangedEvent>;
 
 export interface KeyringGuardConfiguredEventObject {
   keyringCredentials: string;
@@ -958,6 +989,34 @@ export interface KycERC20 extends BaseContract {
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    eip712Domain(
+      overrides?: CallOverrides
+    ): Promise<
+      [string, string, string, BigNumber, string, string, BigNumber[]] & {
+        fields: string;
+        name: string;
+        version: string;
+        chainId: BigNumber;
+        verifyingContract: string;
+        salt: string;
+        extensions: BigNumber[];
+      }
+    >;
+
+    "eip712Domain()"(
+      overrides?: CallOverrides
+    ): Promise<
+      [string, string, string, BigNumber, string, string, BigNumber[]] & {
+        fields: string;
+        name: string;
+        version: string;
+        chainId: BigNumber;
+        verifyingContract: string;
+        salt: string;
+        extensions: BigNumber[];
+      }
+    >;
 
     emptyRule(overrides?: CallOverrides): Promise<[string]>;
 
@@ -1294,6 +1353,34 @@ export interface KycERC20 extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  eip712Domain(
+    overrides?: CallOverrides
+  ): Promise<
+    [string, string, string, BigNumber, string, string, BigNumber[]] & {
+      fields: string;
+      name: string;
+      version: string;
+      chainId: BigNumber;
+      verifyingContract: string;
+      salt: string;
+      extensions: BigNumber[];
+    }
+  >;
+
+  "eip712Domain()"(
+    overrides?: CallOverrides
+  ): Promise<
+    [string, string, string, BigNumber, string, string, BigNumber[]] & {
+      fields: string;
+      name: string;
+      version: string;
+      chainId: BigNumber;
+      verifyingContract: string;
+      salt: string;
+      extensions: BigNumber[];
+    }
+  >;
+
   emptyRule(overrides?: CallOverrides): Promise<string>;
 
   "emptyRule()"(overrides?: CallOverrides): Promise<string>;
@@ -1625,6 +1712,34 @@ export interface KycERC20 extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
+    eip712Domain(
+      overrides?: CallOverrides
+    ): Promise<
+      [string, string, string, BigNumber, string, string, BigNumber[]] & {
+        fields: string;
+        name: string;
+        version: string;
+        chainId: BigNumber;
+        verifyingContract: string;
+        salt: string;
+        extensions: BigNumber[];
+      }
+    >;
+
+    "eip712Domain()"(
+      overrides?: CallOverrides
+    ): Promise<
+      [string, string, string, BigNumber, string, string, BigNumber[]] & {
+        fields: string;
+        name: string;
+        version: string;
+        chainId: BigNumber;
+        verifyingContract: string;
+        salt: string;
+        extensions: BigNumber[];
+      }
+    >;
+
     emptyRule(overrides?: CallOverrides): Promise<string>;
 
     "emptyRule()"(overrides?: CallOverrides): Promise<string>;
@@ -1868,6 +1983,9 @@ export interface KycERC20 extends BaseContract {
       value?: null
     ): ApprovalEventFilter;
 
+    "EIP712DomainChanged()"(): EIP712DomainChangedEventFilter;
+    EIP712DomainChanged(): EIP712DomainChangedEventFilter;
+
     "KeyringGuardConfigured(address,address,address,uint32,bytes32,bytes32)"(
       keyringCredentials?: null,
       policyManager?: null,
@@ -2035,6 +2153,10 @@ export interface KycERC20 extends BaseContract {
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
+
+    eip712Domain(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "eip712Domain()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     emptyRule(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -2379,6 +2501,10 @@ export interface KycERC20 extends BaseContract {
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
+
+    eip712Domain(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "eip712Domain()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     emptyRule(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

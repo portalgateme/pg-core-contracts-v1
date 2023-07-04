@@ -13,3 +13,5 @@ import type * as portalgate from "./portalgate";
 export type { portalgate };
 import type * as tornadoCore from "./tornado-core";
 export type { tornadoCore };
+import type * as verifiers from "./verifiers";
+export type { verifiers };

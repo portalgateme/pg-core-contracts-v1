@@ -34,9 +34,12 @@ export interface PGRouterInterface extends utils.Interface {
     "backupNotes(bytes[])": FunctionFragment;
     "deposit(address,bytes32,bytes)": FunctionFragment;
     "governance()": FunctionFragment;
+    "initialize(address,address,address,address)": FunctionFragment;
     "instanceRegistry()": FunctionFragment;
     "relayerRegistry()": FunctionFragment;
     "rescueTokens(address,address,uint256)": FunctionFragment;
+    "setTornadoTreesContract(address)": FunctionFragment;
+    "tornadoTrees()": FunctionFragment;
     "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)": FunctionFragment;
   };
 
@@ -50,12 +53,18 @@ export interface PGRouterInterface extends utils.Interface {
       | "deposit(address,bytes32,bytes)"
       | "governance"
       | "governance()"
+      | "initialize"
+      | "initialize(address,address,address,address)"
       | "instanceRegistry"
       | "instanceRegistry()"
       | "relayerRegistry"
       | "relayerRegistry()"
       | "rescueTokens"
       | "rescueTokens(address,address,uint256)"
+      | "setTornadoTreesContract"
+      | "setTornadoTreesContract(address)"
+      | "tornadoTrees"
+      | "tornadoTrees()"
       | "withdraw"
       | "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)"
   ): FunctionFragment;
@@ -109,6 +118,24 @@ export interface PGRouterInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "initialize",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "initialize(address,address,address,address)",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>
+    ]
+  ): string;
+  encodeFunctionData(
     functionFragment: "instanceRegistry",
     values?: undefined
   ): string;
@@ -139,6 +166,22 @@ export interface PGRouterInterface extends utils.Interface {
       PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>
     ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setTornadoTreesContract",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setTornadoTreesContract(address)",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "tornadoTrees",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "tornadoTrees()",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "withdraw",
@@ -193,6 +236,11 @@ export interface PGRouterInterface extends utils.Interface {
     functionFragment: "governance()",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "initialize(address,address,address,address)",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "instanceRegistry",
     data: BytesLike
@@ -217,6 +265,22 @@ export interface PGRouterInterface extends utils.Interface {
     functionFragment: "rescueTokens(address,address,uint256)",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "setTornadoTreesContract",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setTornadoTreesContract(address)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "tornadoTrees",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "tornadoTrees()",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "withdraw(address,bytes,bytes32,bytes32,address,address,uint256,uint256)",
@@ -225,11 +289,19 @@ export interface PGRouterInterface extends utils.Interface {
 
   events: {
     "EncryptedNote(address,bytes)": EventFragment;
+    "Initialized(uint8)": EventFragment;
+    "TornadoTreesUpdated(address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "EncryptedNote"): EventFragment;
   getEvent(
     nameOrSignatureOrTopic: "EncryptedNote(address,bytes)"
+  ): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Initialized(uint8)"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "TornadoTreesUpdated"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic: "TornadoTreesUpdated(address)"
   ): EventFragment;
 }
 
@@ -243,6 +315,24 @@ export type EncryptedNoteEvent = TypedEvent<
 >;
 
 export type EncryptedNoteEventFilter = TypedEventFilter<EncryptedNoteEvent>;
+
+export interface InitializedEventObject {
+  version: number;
+}
+export type InitializedEvent = TypedEvent<[number], InitializedEventObject>;
+
+export type InitializedEventFilter = TypedEventFilter<InitializedEvent>;
+
+export interface TornadoTreesUpdatedEventObject {
+  addr: string;
+}
+export type TornadoTreesUpdatedEvent = TypedEvent<
+  [string],
+  TornadoTreesUpdatedEventObject
+>;
+
+export type TornadoTreesUpdatedEventFilter =
+  TypedEventFilter<TornadoTreesUpdatedEvent>;
 
 export interface PGRouter extends BaseContract {
   contractName: "PGRouter";
@@ -315,6 +405,22 @@ export interface PGRouter extends BaseContract {
 
     "governance()"(overrides?: CallOverrides): Promise<[string]>;
 
+    initialize(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    "initialize(address,address,address,address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     instanceRegistry(overrides?: CallOverrides): Promise<[string]>;
 
     "instanceRegistry()"(overrides?: CallOverrides): Promise<[string]>;
@@ -336,6 +442,20 @@ export interface PGRouter extends BaseContract {
       _amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    setTornadoTreesContract(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    "setTornadoTreesContract(address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    tornadoTrees(overrides?: CallOverrides): Promise<[string]>;
+
+    "tornadoTrees()"(overrides?: CallOverrides): Promise<[string]>;
 
     withdraw(
       _tornado: PromiseOrValue<string>,
@@ -404,6 +524,22 @@ export interface PGRouter extends BaseContract {
 
   "governance()"(overrides?: CallOverrides): Promise<string>;
 
+  initialize(
+    _tornadoTrees: PromiseOrValue<string>,
+    _governance: PromiseOrValue<string>,
+    _instanceRegistry: PromiseOrValue<string>,
+    _relayerRegistry: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  "initialize(address,address,address,address)"(
+    _tornadoTrees: PromiseOrValue<string>,
+    _governance: PromiseOrValue<string>,
+    _instanceRegistry: PromiseOrValue<string>,
+    _relayerRegistry: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   instanceRegistry(overrides?: CallOverrides): Promise<string>;
 
   "instanceRegistry()"(overrides?: CallOverrides): Promise<string>;
@@ -425,6 +561,20 @@ export interface PGRouter extends BaseContract {
     _amount: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
+
+  setTornadoTreesContract(
+    _tornadoTrees: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  "setTornadoTreesContract(address)"(
+    _tornadoTrees: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  tornadoTrees(overrides?: CallOverrides): Promise<string>;
+
+  "tornadoTrees()"(overrides?: CallOverrides): Promise<string>;
 
   withdraw(
     _tornado: PromiseOrValue<string>,
@@ -493,6 +643,22 @@ export interface PGRouter extends BaseContract {
 
     "governance()"(overrides?: CallOverrides): Promise<string>;
 
+    initialize(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "initialize(address,address,address,address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     instanceRegistry(overrides?: CallOverrides): Promise<string>;
 
     "instanceRegistry()"(overrides?: CallOverrides): Promise<string>;
@@ -514,6 +680,20 @@ export interface PGRouter extends BaseContract {
       _amount: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    setTornadoTreesContract(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    "setTornadoTreesContract(address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    tornadoTrees(overrides?: CallOverrides): Promise<string>;
+
+    "tornadoTrees()"(overrides?: CallOverrides): Promise<string>;
 
     withdraw(
       _tornado: PromiseOrValue<string>,
@@ -549,6 +729,12 @@ export interface PGRouter extends BaseContract {
       sender?: PromiseOrValue<string> | null,
       encryptedNote?: null
     ): EncryptedNoteEventFilter;
+
+    "Initialized(uint8)"(version?: null): InitializedEventFilter;
+    Initialized(version?: null): InitializedEventFilter;
+
+    "TornadoTreesUpdated(address)"(addr?: null): TornadoTreesUpdatedEventFilter;
+    TornadoTreesUpdated(addr?: null): TornadoTreesUpdatedEventFilter;
   };
 
   estimateGas: {
@@ -594,6 +780,22 @@ export interface PGRouter extends BaseContract {
 
     "governance()"(overrides?: CallOverrides): Promise<BigNumber>;
 
+    initialize(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    "initialize(address,address,address,address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     instanceRegistry(overrides?: CallOverrides): Promise<BigNumber>;
 
     "instanceRegistry()"(overrides?: CallOverrides): Promise<BigNumber>;
@@ -615,6 +817,20 @@ export interface PGRouter extends BaseContract {
       _amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
+
+    setTornadoTreesContract(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    "setTornadoTreesContract(address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    tornadoTrees(overrides?: CallOverrides): Promise<BigNumber>;
+
+    "tornadoTrees()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdraw(
       _tornado: PromiseOrValue<string>,
@@ -684,6 +900,22 @@ export interface PGRouter extends BaseContract {
 
     "governance()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    initialize(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    "initialize(address,address,address,address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      _governance: PromiseOrValue<string>,
+      _instanceRegistry: PromiseOrValue<string>,
+      _relayerRegistry: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     instanceRegistry(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     "instanceRegistry()"(
@@ -709,6 +941,20 @@ export interface PGRouter extends BaseContract {
       _amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
+
+    setTornadoTreesContract(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    "setTornadoTreesContract(address)"(
+      _tornadoTrees: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    tornadoTrees(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    "tornadoTrees()"(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     withdraw(
       _tornado: PromiseOrValue<string>,

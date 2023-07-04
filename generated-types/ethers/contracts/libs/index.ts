@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { EnsResolve } from "./EnsResolve";
+export type { OwnableMerkleTree } from "./OwnableMerkleTree";

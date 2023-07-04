@@ -1,8 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
-import { DeployTags } from '../types/tags.enum'
-import { onlyLocalNetwork } from './utils'
+import { DeployTags, onlyLocalNetwork, baseDeployOptions } from '../utils/deploy'
 import { keccak256 } from 'ethers/lib/utils'
 
 const deployKeyringGuardMockDependency: DeployFunction = async ({
@@ -15,12 +14,13 @@ const deployKeyringGuardMockDependency: DeployFunction = async ({
 
   onlyLocalNetwork(chainId)
 
+  const baseDeployOpts = baseDeployOptions(chainId)
+
   await deploy('MockRuleRegistry', {
     contract: 'contracts/mocks/MockRuleRegistry.sol:MockRuleRegistry',
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: 1,
+    ...baseDeployOpts,
   })
 
   const MockRuleRegistry = await ethers.getContract('MockRuleRegistry', deployer)
@@ -32,41 +32,36 @@ const deployKeyringGuardMockDependency: DeployFunction = async ({
   await deploy('MockKeyringCredentials', {
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: 1,
+    ...baseDeployOpts,
   })
 
-  const MockWalletCheck = await deploy('MockWalletCheck', {
+  const mockWalletCheck = await deploy('MockWalletCheck', {
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: 1,
+    ...baseDeployOpts,
   })
 
   await deploy('MockPolicyManager', {
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: 1,
+    ...baseDeployOpts,
   })
 
   const MockPolicyManager = await ethers.getContract('MockPolicyManager', deployer)
   await MockPolicyManager.setIsPolicy(true)
   await MockPolicyManager.setRuleRegistry(MockRuleRegistry.address)
-  await MockPolicyManager.setWalletChecks([MockWalletCheck.address])
+  await MockPolicyManager.setWalletChecks([mockWalletCheck.address])
 
   await deploy('MockUserPolicies', {
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: 1,
+    ...baseDeployOpts,
   })
 
   await deploy('MockTrustedForwarder', {
     from: deployer,
     args: [],
-    log: true,
-    waitConfirmations: 1,
+    ...baseDeployOpts,
   })
 }
 

@@ -61,7 +61,7 @@ export interface KycETHInterface extends utils.Interface {
     "whitelistAddress(address)": FunctionFragment;
     "whitelistAddressAtIndex(uint256)": FunctionFragment;
     "whitelistAddressCount()": FunctionFragment;
-    "withdrawTo(uint256)": FunctionFragment;
+    "withdrawTo(address,uint256)": FunctionFragment;
   };
 
   getFunction(
@@ -129,7 +129,7 @@ export interface KycETHInterface extends utils.Interface {
       | "whitelistAddressCount"
       | "whitelistAddressCount()"
       | "withdrawTo"
-      | "withdrawTo(uint256)"
+      | "withdrawTo(address,uint256)"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -372,11 +372,11 @@ export interface KycETHInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "withdrawTo",
-    values: [PromiseOrValue<BigNumberish>]
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "withdrawTo(uint256)",
-    values: [PromiseOrValue<BigNumberish>]
+    functionFragment: "withdrawTo(address,uint256)",
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
 
   decodeFunctionResult(
@@ -578,7 +578,7 @@ export interface KycETHInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "withdrawTo", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "withdrawTo(uint256)",
+    functionFragment: "withdrawTo(address,uint256)",
     data: BytesLike
   ): Result;
 
@@ -1021,11 +1021,13 @@ export interface KycETH extends BaseContract {
     ): Promise<[BigNumber] & { count: BigNumber }>;
 
     withdrawTo(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    "withdrawTo(uint256)"(
+    "withdrawTo(address,uint256)"(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -1282,11 +1284,13 @@ export interface KycETH extends BaseContract {
   "whitelistAddressCount()"(overrides?: CallOverrides): Promise<BigNumber>;
 
   withdrawTo(
+    to: PromiseOrValue<string>,
     amount: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  "withdrawTo(uint256)"(
+  "withdrawTo(address,uint256)"(
+    to: PromiseOrValue<string>,
     amount: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -1539,11 +1543,13 @@ export interface KycETH extends BaseContract {
     "whitelistAddressCount()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdrawTo(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    "withdrawTo(uint256)"(
+    "withdrawTo(address,uint256)"(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -1898,11 +1904,13 @@ export interface KycETH extends BaseContract {
     "whitelistAddressCount()"(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdrawTo(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    "withdrawTo(uint256)"(
+    "withdrawTo(address,uint256)"(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
@@ -2178,11 +2186,13 @@ export interface KycETH extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     withdrawTo(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    "withdrawTo(uint256)"(
+    "withdrawTo(address,uint256)"(
+      to: PromiseOrValue<string>,
       amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;

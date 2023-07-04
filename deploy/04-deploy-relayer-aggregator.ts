@@ -1,7 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { network } from 'hardhat'
-import { DeployTags } from '../types/tags.enum'
+import { baseDeployOptions, DeployTags } from '../utils/deploy'
 
 const deployRelayerAggregator: DeployFunction = async ({
   deployments,
@@ -11,13 +11,12 @@ const deployRelayerAggregator: DeployFunction = async ({
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const RelayerRegistry = await deployments.get('RelayerRegistry')
+  const relayerRegistry = await deployments.get('RelayerRegistry')
 
   await deploy('RelayerAggregator', {
     from: deployer,
-    args: [RelayerRegistry.address],
-    log: true,
-    waitConfirmations: chainId === 31337 ? 1 : 6,
+    args: [relayerRegistry.address],
+    ...baseDeployOptions(chainId),
   })
 }
 
