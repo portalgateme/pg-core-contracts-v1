@@ -3,13 +3,11 @@ import { setup, SetupFunction } from './tools/setup'
 import { generateTree } from '../utils/merkleTree'
 import Account from '../utils/ap/account'
 import Note from '../utils/ap/note'
-import { utils } from 'ethers'
 import Controller from '../utils/ap/controller'
 import * as fs from 'fs'
 import { getPubKey, toFixedHex } from '../utils/utils'
 import { MockTornadoTrees } from '../generated-types/ethers'
 import { deimpresonate, impresonate } from './helpers/impresonator'
-import { packEncryptedMessage } from '../utils/ap/utils'
 import { toBN } from 'web3-utils'
 
 const provingKeys = {
@@ -129,7 +127,6 @@ async function pre({ deployer, instances }: Pick<PreFunctionParameter, 'deployer
 describe('Miner', function () {
   describe('Deployment', function () {
     it('Should deploy Miner', async function () {
-      console.log(firstHardhatPublicKey)
       const { deployer } = await setup()
       expect(deployer['Miner'].address).to.be.properAddress
     })
@@ -527,7 +524,7 @@ describe('Miner', function () {
     })
   })
 
-  describe.only('withdraw', () => {
+  describe('withdraw', () => {
     const preWithdraw = async ({
       deployer,
       instances,

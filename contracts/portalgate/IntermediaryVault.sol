@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "./KycERC20.sol";
+import "../keyring/tokens/KycERC20.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "./PGRouter.sol";
 

@@ -27,8 +27,6 @@ export const setup = deployments.createFixture(async () => {
     RelayerAggregator: (await ethers.getContract('RelayerAggregator')) as RelayerAggregator,
     InstanceRegistry: (await ethers.getContract('InstanceRegistry')) as InstanceRegistry,
     InstanceMockERC20: (await ethers.getContract('InstanceMockERC20')) as InstanceMockERC20,
-    KycERC20: (await ethers.getContract('KycERC20')) as KycERC20,
-    KycETH: (await ethers.getContract('KycETH')) as KycETH,
     MockTrustedForwarder: (await ethers.getContract('MockTrustedForwarder')) as any,
     MockKeyringCredentials: (await ethers.getContract('MockKeyringCredentials')) as any,
     MockPolicyManager: (await ethers.getContract('MockPolicyManager')) as any,
