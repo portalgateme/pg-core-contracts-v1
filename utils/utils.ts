@@ -7,6 +7,7 @@ import { getEncryptionPublicKey } from 'eth-sig-util'
 import { BigNumber, utils } from 'ethers'
 import { toBN, soliditySha3 } from 'web3-utils'
 import { randomBytes } from 'crypto'
+import { Address } from '../config/types'
 
 export const getPubKey = getEncryptionPublicKey
 
@@ -26,3 +27,14 @@ export const randomBN = (nbytes = 31) => toBN(bigInt.leBuff2int(randomBytes(nbyt
 export const toFixedHex = (number: any, length = 32) =>
   '0x' +
   (number instanceof Buffer ? number.toString('hex') : bigInt(number).toString(16)).padStart(length * 2, '0')
+
+export const getUniqueByToken = <T>(array: T[], token: keyof T) => {
+  const seen = new Set()
+  return array.filter((item) => {
+    if (!seen.has(item[token])) {
+      seen.add(item[token])
+      return true
+    }
+    return false
+  })
+}

@@ -35,8 +35,7 @@ export enum DeployTags {
 
   MockERC20 = 'mock-erc20',
   KeyringDependency = 'keyring-dependency',
-  MockKycERC20 = 'mock-kyc-erc20',
-  MockKycETH = 'mock-kyc-eth',
+  KycTokens = 'kyc-tokens',
   TornadoTrees = 'tornado-trees',
   Miner = 'miner',
   Hashers = 'hashers',
