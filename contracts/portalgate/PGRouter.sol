@@ -117,9 +117,6 @@ contract PGRouter is Initializable {
       );
     }
 
-    // keyring attestation needed. TBC
-
-
     _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
 
     if (state == InstanceRegistry.InstanceState.MINABLE) {
