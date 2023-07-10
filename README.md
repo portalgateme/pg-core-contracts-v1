@@ -49,13 +49,16 @@ yarn compile
 yarn deploy:goerli
 ```
 
-_Contracts may already be deployed on Goerli testnet. If you want to deploy them again, make sure to delete `deployments` folder._
+_Contracts may have already been deployed on Goerli testnet. Normally, hardhat-deploy will check if contracts with same bytecode is already deployed and will not re-deploy contract but instead will reuse deployed one. If you want to have a fresh deploy, make sure to delete `deployments` folder._
 
 3. Verify contracts
+
 
 ```bash
 yarn verify:goerli
 ```
+
+_This will verify contracts on Etherscan._
 
 ### Local network
 

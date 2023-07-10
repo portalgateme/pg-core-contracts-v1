@@ -8,8 +8,10 @@ const deployZapper: DeployFunction = async ({ deployments, getNamedAccounts }: H
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const pgRouter = await deployments.get('PGRouter')
-  const instanceRegistry = await deployments.get('InstanceRegistry')
+  const [pgRouter, instanceRegistry] = await Promise.all([
+    deployments.get('PGRouter'),
+    deployments.get('InstanceRegistry'),
+  ])
 
   await deploy('Zapper', {
     from: deployer,

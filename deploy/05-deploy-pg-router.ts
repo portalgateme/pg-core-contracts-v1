@@ -12,8 +12,10 @@ const deployPGRouter: DeployFunction = async ({
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
-  const instanceRegistry = await deployments.get('InstanceRegistry')
-  const relayerRegistry = await deployments.get('RelayerRegistry')
+  const [instanceRegistry, relayerRegistry] = await Promise.all([
+    deployments.get('InstanceRegistry'),
+    deployments.get('RelayerRegistry'),
+  ])
 
   const pgRouter = await deploy('PGRouter', {
     from: deployer,

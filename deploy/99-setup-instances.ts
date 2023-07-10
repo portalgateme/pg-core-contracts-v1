@@ -52,11 +52,11 @@ const setupInstances: DeployFunction = async ({
         addr: deployedInstance.address,
         instance: {
           isERC20: instance.isERC20,
-          state: 1,
+          state: instance.state,
           token: instance.isERC20 ? instance.token : ethers.constants.AddressZero,
-          uniswapPoolSwappingFee: 0,
-          protocolFeePercentage: 0,
-          maxDepositAmount: 100000,
+          uniswapPoolSwappingFee: instance.uniswapPoolSwappingFee,
+          protocolFeePercentage: instance.protocolFeePercentage,
+          maxDepositAmount: instance.maxDepositAmount.toString(),
         },
       })
     }

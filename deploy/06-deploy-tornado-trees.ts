@@ -12,12 +12,11 @@ const deployPGRouter: DeployFunction = async ({
   const chainId = network.config.chainId!
 
   const baseDeployOpts = baseDeployOptions(chainId)
-
-  const hasher3 = await deployments.get('Hasher3')
-
-  const hasher2 = await deployments.get('Hasher2')
-
-  const pgRouter = await deployments.get('PGRouter')
+  const [hasher3, hasher2, pgRouter] = await Promise.all([
+    deployments.get('Hasher3'),
+    deployments.get('Hasher2'),
+    deployments.get('PGRouter'),
+  ])
 
   const tornadoTrees = await deploy('TornadoTrees', {
     contract: isLocalNetwork(chainId) ? 'MockTornadoTrees' : 'TornadoTrees',
@@ -31,5 +30,4 @@ const deployPGRouter: DeployFunction = async ({
 
 export default deployPGRouter
 
-// deployPGRouter.dependencies = ['PGRouter', 'Hasher2']
 deployPGRouter.tags = [DeployTags.TEST, DeployTags.STAGE, DeployTags.TornadoTrees]

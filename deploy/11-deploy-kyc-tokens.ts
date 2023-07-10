@@ -39,13 +39,13 @@ const deployKycTokens: DeployFunction = async ({
   }
 
   if (!isLocalNetwork(chainId)) {
-    const policyCount = await (
-      await new ethers.Contract(
-        baseKeyringConfig.policyManager,
-        ['function policyCount() view returns (uint256)'],
-        ethers.provider.getSigner(deployer),
-      ).policyCount()
-    ).wait()
+    const policyCount = await new ethers.Contract(
+      baseKeyringConfig.policyManager,
+      ['function policyCount() view returns (uint256)'],
+      ethers.provider.getSigner(deployer),
+    ).policyCount()
+
+    const policyId = Number(policyCount) - 1
 
     const erc20Instances = getUniqueByToken(instanceConfig[chainId.toString()].filter(isERC20Item), 'token')
     const ethInstances = instanceConfig[chainId.toString()].filter((item) => !isERC20Item(item))
@@ -59,11 +59,11 @@ const deployKycTokens: DeployFunction = async ({
       }
 
       await deploy(instance.currencyName + 'Kyc', {
-        contract: 'KycERC20',
+        contract: 'contracts/portalgate/KycERC20.sol:KycERC20',
         from: deployer,
         args: [
           keyringConfig,
-          policyCount,
+          policyId,
           MAXIMUM_CONSENT_PERIOD,
           instance.currencyName + 'Kyc',
           instance.currencyName + 'Kyc',
@@ -74,9 +74,9 @@ const deployKycTokens: DeployFunction = async ({
 
     for await (const instance of ethInstances) {
       await deploy(instance.name + 'Kyc', {
-        contract: 'KycETH',
+        contract: 'contracts/portalgate/KycETH.sol:KycETH',
         from: deployer,
-        args: [baseKeyringConfig, policyCount, MAXIMUM_CONSENT_PERIOD],
+        args: [baseKeyringConfig, policyId, MAXIMUM_CONSENT_PERIOD],
         ...baseDeployOpts,
       })
     }

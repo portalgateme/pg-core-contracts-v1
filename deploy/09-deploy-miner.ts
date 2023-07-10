@@ -2,9 +2,11 @@ import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers, network } from 'hardhat'
 
-import { toFixedHex, poseidonHash2 } from '../utils/utils'
+import { toFixedHex } from '../utils/utils'
 import { baseDeployOptions, DeployTags, isLocalNetwork, sleep } from '../utils/deploy'
 import { generateTree } from '../utils/merkleTree'
+
+import instancesConfig from '../config/instances'
 
 const deployMiner: DeployFunction = async ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) => {
   const { deploy, execute } = deployments
@@ -42,8 +44,11 @@ const deployMiner: DeployFunction = async ({ deployments, getNamedAccounts }: Ha
   const rates: { instance: string; value: string }[] = []
 
   if (isLocalNetwork(chainId)) {
-    const erc20Tornado100Instance = await deployments.get('ERC20Tornado-100')
-    const erc20Tornado1000Instance = await deployments.get('ERC20Tornado-1000')
+    const [erc20Tornado100Instance, erc20Tornado1000Instance] = await Promise.all([
+      deployments.get('ERC20Tornado-100'),
+      deployments.get('ERC20Tornado-1000'),
+    ])
+
     const testRates = [
       {
         instance: erc20Tornado100Instance.address,
@@ -57,12 +62,22 @@ const deployMiner: DeployFunction = async ({ deployments, getNamedAccounts }: Ha
 
     rates.push(...testRates)
   } else {
-    const deployRates = [
-      {
-        instance: '0x34317E92C6AFFF78865aC68CAE7BE415c55fA09b',
-        value: ethers.BigNumber.from(1000).toString(),
-      },
-    ]
+    const instances = instancesConfig[chainId.toString()]
+    const deployRates = []
+
+    for await (const instance of instances) {
+      if (!instance.miningRate) {
+        continue
+      }
+
+      const Instance = await deployments.get(instance.name)
+      const value = ethers.BigNumber.from(instance.miningRate).toString()
+
+      deployRates.push({
+        instance: Instance.address,
+        value,
+      })
+    }
 
     rates.push(...deployRates)
   }

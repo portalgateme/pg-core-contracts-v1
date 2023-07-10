@@ -15,6 +15,7 @@ interface BaseInstanceConfigItem {
   name: string
   markleTreeHeight?: number
   currencyName: string
+  miningRate: BigNumber | null
 }
 
 export interface ERC20InstanceConfigItem extends BaseInstanceConfigItem {

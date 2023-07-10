@@ -4,7 +4,6 @@ import { network } from 'hardhat'
 import { DeployTags, baseDeployOptions, isLocalNetwork } from '../utils/deploy'
 
 import instancesConfig from '../config/instances'
-import base = Mocha.reporters.base
 
 const deployTornadoInstance: DeployFunction = async ({
   deployments,
