@@ -4,9 +4,8 @@ import { network, ethers } from 'hardhat'
 import {
   Address,
   BaseKeyringTokenConstructorConfig,
-  ERC20InstanceConfigItem,
   ERC20KeyringTokenConstructorConfig,
-  InstanceConfigItem,
+  BaseInstanceConfigItem,
 } from '../config/types'
 import instanceConfig from '../config/instances'
 import keyringConfig, { MAXIMUM_CONSENT_PERIOD } from '../config/keyring'
@@ -14,7 +13,7 @@ import keyringConfig, { MAXIMUM_CONSENT_PERIOD } from '../config/keyring'
 import { baseDeployOptions, DeployTags, isLocalNetwork } from '../utils/deploy'
 import { getUniqueByToken } from '../utils/utils'
 
-const isERC20Item = (item: InstanceConfigItem): item is ERC20InstanceConfigItem => item.isERC20
+const isERC20Item = (item: BaseInstanceConfigItem) => item.isERC20
 
 const deployKycTokens: DeployFunction = async ({
   deployments,
@@ -51,14 +50,12 @@ const deployKycTokens: DeployFunction = async ({
     const ethInstances = instanceConfig[chainId.toString()].filter((item) => !isERC20Item(item))
 
     for await (const instance of erc20Instances) {
-      const Instance = await deployments.get(instance.name)
-
       const keyringConfig: ERC20KeyringTokenConstructorConfig = {
         ...baseKeyringConfig,
-        collateralToken: Instance.address as Address,
+        collateralToken: instance.token as Address,
       }
 
-      await deploy(instance.currencyName + 'Kyc', {
+      const deployed = await deploy(instance.currencyName + 'Kyc', {
         contract: 'contracts/portalgate/KycERC20.sol:KycERC20',
         from: deployer,
         args: [
@@ -70,19 +67,31 @@ const deployKycTokens: DeployFunction = async ({
         ],
         ...baseDeployOpts,
       })
+
+      console.log('Deployed KycERC20 for', instance.currencyName)
+      console.log(
+        `Please, paste the following line into config/instances.ts where token is ${instance.token}: `,
+      )
+      console.log(`kycToken: "${deployed.address}"`)
     }
 
     for await (const instance of ethInstances) {
-      await deploy(instance.name + 'Kyc', {
+      const deployed = await deploy(instance.name + 'Kyc', {
         contract: 'contracts/portalgate/KycETH.sol:KycETH',
         from: deployer,
         args: [baseKeyringConfig, policyId, MAXIMUM_CONSENT_PERIOD],
         ...baseDeployOpts,
       })
+
+      console.log('Deployed KycETH for', instance.currencyName)
+      console.log(
+        `Please, paste the following line into config/instances.ts where token is null (native ETH): `,
+      )
+      console.log(`kycToken: "${deployed.address}"`)
     }
   }
 }
 
 export default deployKycTokens
 
-deployKycTokens.tags = [DeployTags.TEST, DeployTags.STAGE, DeployTags.KycTokens]
+deployKycTokens.tags = [DeployTags.TEST, DeployTags.KycTokens]

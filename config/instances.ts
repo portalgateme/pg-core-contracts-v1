@@ -8,11 +8,11 @@ export default {
     {
       // address of the token
       token: '0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557',
+      // address of kyced token
+      kycToken: '0xE86150332225b3674f7fa851d0E1C71FA8F7df12',
       // denomination of the token
       // (make sure to check decimals of the token)
-      denomination: 100000,
-      // is token ERC20
-      isERC20: true,
+      denomination: BigNumber.from(100000000),
       // state of the instance
       // * 0 - instance disabled,
       // * 1 - instance enabled,
@@ -40,6 +40,8 @@ export default {
       // can be null in case if instance has not enabled mining
       // in example below 100 tokens will be mined per block since token has 18 decimals
       miningRate: ethers.BigNumber.from(100).pow(18),
+      // is token ERC20
+      isERC20: true,
     },
   ],
 } as InstanceConfig

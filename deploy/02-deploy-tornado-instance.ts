@@ -57,9 +57,14 @@ const deployTornadoInstance: DeployFunction = async ({
   } else {
     const instances = instancesConfig[chainId.toString()]
     for await (const instance of instances) {
-      const contract = instance.isERC20 ? 'ERC20Tornado' : 'ETHTornado'
-      const baseArgs = [verifier.address, hasher2.address, instance.denomination, instance.markleTreeHeight]
-      const args = instance.isERC20 ? [...baseArgs, instance.token] : baseArgs
+      const contract = 'ERC20Tornado'
+      const args = [
+        verifier.address,
+        hasher2.address,
+        instance.denomination,
+        instance.markleTreeHeight,
+        instance.kycToken,
+      ]
 
       await deploy(instance.name, {
         contract,

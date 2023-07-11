@@ -2,12 +2,12 @@ import { BigNumber } from 'ethers'
 
 export type Address = `0x${string}`
 
-export type InstanceDenomination = 100 | 1000 | 10000 | 100000 | 1000000
 export type InstanceState = 0 | 1 | 2
 
-interface BaseInstanceConfigItem {
-  denomination: InstanceDenomination
-  isERC20: boolean
+export interface BaseInstanceConfigItem {
+  token: Address | null
+  kycToken?: Address
+  denomination: BigNumber
   state: InstanceState
   uniswapPoolSwappingFee: number
   protocolFeePercentage: number
@@ -16,21 +16,11 @@ interface BaseInstanceConfigItem {
   markleTreeHeight?: number
   currencyName: string
   miningRate: BigNumber | null
+  isERC20: boolean
 }
-
-export interface ERC20InstanceConfigItem extends BaseInstanceConfigItem {
-  isERC20: true
-  token: Address
-}
-
-export interface NonERC20InstanceConfigItem extends BaseInstanceConfigItem {
-  isERC20: false
-}
-
-export type InstanceConfigItem = ERC20InstanceConfigItem | NonERC20InstanceConfigItem
 
 export interface InstanceConfig {
-  [chainId: string]: InstanceConfigItem[]
+  [chainId: string]: BaseInstanceConfigItem[]
 }
 
 /** Keyring config */

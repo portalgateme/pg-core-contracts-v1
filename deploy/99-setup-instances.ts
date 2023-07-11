@@ -16,7 +16,6 @@ const setupInstances: DeployFunction = async ({
   let instances = []
 
   if (isLocalNetwork(chainId)) {
-    const instanceRegistry = await deployments.get('InstanceRegistry')
     const deployedInstancesNames = ['ERC20Tornado-100', 'ERC20Tornado-1000']
     const deployedInstances = await Promise.all(
       deployedInstancesNames.map((name) => deployments.getOrNull(name)),
@@ -24,8 +23,6 @@ const setupInstances: DeployFunction = async ({
     const deployedInstancesAddresses = deployedInstances
       .filter((instance) => instance !== null)
       .map((instance) => instance!.address)
-
-    const InstanceRegistry = await ethers.getContractAt('InstanceRegistry', instanceRegistry.address)
 
     const instanceMockERC20 = await deployments.get('InstanceMockERC20')
 
@@ -51,9 +48,9 @@ const setupInstances: DeployFunction = async ({
       instances.push({
         addr: deployedInstance.address,
         instance: {
-          isERC20: instance.isERC20,
+          isERC20: true,
           state: instance.state,
-          token: instance.isERC20 ? instance.token : ethers.constants.AddressZero,
+          token: instance.kycToken,
           uniswapPoolSwappingFee: instance.uniswapPoolSwappingFee,
           protocolFeePercentage: instance.protocolFeePercentage,
           maxDepositAmount: instance.maxDepositAmount.toString(),
