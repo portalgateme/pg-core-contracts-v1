@@ -33,12 +33,12 @@ contract PGRouter is Initializable {
     _;
   }
 
-  constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
-    tornadoTrees = ITornadoTrees(_tornadoTrees);
-    governance = _governance;
-    instanceRegistry = InstanceRegistry(_instanceRegistry);
-    relayerRegistry = RelayerRegistry(_relayerRegistry);
-  }
+  // constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
+  //   tornadoTrees = ITornadoTrees(_tornadoTrees);
+  //   governance = _governance;
+  //   instanceRegistry = InstanceRegistry(_instanceRegistry);
+  //   relayerRegistry = RelayerRegistry(_relayerRegistry);
+  // }
 
   /**
     @notice For proxy pattern
