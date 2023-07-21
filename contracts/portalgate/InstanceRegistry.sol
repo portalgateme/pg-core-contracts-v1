@@ -34,7 +34,7 @@ contract InstanceRegistry {
         Instance instance;
     }
 
-    address public immutable governance;
+    address public governance;
     PGRouter public router;
 
     mapping(ITornadoInstance => Instance) public instances;
@@ -177,21 +177,30 @@ contract InstanceRegistry {
     }
 
     /**
+     * @notice Set new governance address.
+     * @param _govAddr new governance address
+     */
+    function setNewGovernance(address _govAddr) external onlyGovernance  {
+      governance = _govAddr;
+    }
+
+    /**
      * @dev Returns all instance addresses
      */
     function getAllInstanceAddresses()
         public
         view
-        returns (ITornadoInstance[] memory result)
-    {
+        returns (ITornadoInstance[] memory result) {
         result = new ITornadoInstance[](instanceIds.length);
         for (uint256 i = 0; i < instanceIds.length; i++) {
             result[i] = instanceIds[i];
         }
     }
 
-    /// @notice get erc20 tornado instance token
-    /// @param instance the interface (contract) key to the instance data
+    /**
+     * @notice get erc20 tornado instance token
+     * @param instance the interface (contract) key to the instance data
+     */
     function getPoolToken(
         ITornadoInstance instance
     ) external view returns (address) {

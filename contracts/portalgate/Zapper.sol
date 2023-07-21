@@ -30,7 +30,7 @@ contract Zapper is Ownable {
     @param _tornado TC pool instance address
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
-  function zapInEth(ITornadoInstance _tornado, bytes32 _commitment) public payable {
+  function zapInEth(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) external payable {
     (, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
 
     address _kycEth = address(token);
@@ -42,7 +42,7 @@ contract Zapper is Ownable {
       kycEth.approve(address(pgRouter), _tornado.denomination());
     }
 
-    pgRouter.deposit(_tornado, _commitment, "0x");
+    pgRouter.deposit(_tornado, _commitment, _encryptedNote);
   }
 
   /**
@@ -50,7 +50,7 @@ contract Zapper is Ownable {
     @param _tornado TC pool instance address
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
-  function zapIn(ITornadoInstance _tornado, bytes32 _commitment) external {
+  function zapIn(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) external {
     (, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
 
     address _kycErc20 = address(token);
@@ -61,7 +61,7 @@ contract Zapper is Ownable {
 
     kycErc20.depositFor(address(this), _tornado.denomination());
     kycErc20.approve(address(pgRouter), _tornado.denomination());
-    pgRouter.deposit(_tornado, _commitment, "0x");
+    pgRouter.deposit(_tornado, _commitment, _encryptedNote);
   }
 
   function updatePgRouter(address _newPgRouter) external onlyOwner {

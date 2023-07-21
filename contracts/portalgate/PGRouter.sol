@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -125,24 +123,36 @@ contract PGRouter is Initializable {
   }
 
   /**
-   * @dev Sets `amount` allowance of `_spender` over the router's (this contract) tokens.
-   */
+   @dev Sets `amount` allowance of `_spender` over the router's (this contract) tokens.
+  */
   function approveExactToken(IERC20 _token, address _spender, uint256 _amount) external onlyInstanceRegistry {
     _token.safeApprove(_spender, _amount);
   }
 
   /**
-   * @notice Manually backup encrypted notes
-   */
+   @notice Manually backup encrypted notes
+  */
   function backupNotes(bytes[] calldata _encryptedNotes) external virtual {
     for (uint256 i = 0; i < _encryptedNotes.length; i++) {
       emit EncryptedNote(msg.sender, _encryptedNotes[i]);
     }
   }
 
+  /**
+    @dev Update new tornado tree instance.
+    @param _tornadoTrees new tornado tree instance address
+  */
   function setTornadoTreesContract(ITornadoTrees _tornadoTrees) external virtual onlyGovernance  {
     tornadoTrees = _tornadoTrees;
     emit TornadoTreesUpdated(_tornadoTrees);
+  }
+
+  /**
+    @notice Set new governance address.
+    @param _govAddr new governance address
+  */
+  function setNewGovernance(address _govAddr) external onlyGovernance  {
+    governance = _govAddr;
   }
 
   /// @dev Method to claim junk and accidentally sent tokens

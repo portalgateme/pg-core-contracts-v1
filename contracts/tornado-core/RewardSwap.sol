@@ -11,7 +11,7 @@ contract RewardSwap {
   address public miner;
   address public immutable operator;
 
-  event Swap(address indexed recipient, uint256 amount, uint256 tokens);
+  event Mint(address indexed recipient, uint256 amount);
 
   modifier onlyMiner() {
     require(msg.sender == miner, "Only Miner contract can call");
@@ -23,10 +23,7 @@ contract RewardSwap {
     _;
   }
 
-  constructor(
-    address _apToken,
-    address _miner
-  ) public {
+  constructor (address _apToken, address _miner) {
     apToken = IPGAT(_apToken);
     miner = _miner;
     operator = msg.sender;
@@ -41,9 +38,8 @@ contract RewardSwap {
   }
 
   function swap(address _recipient, uint256 _amount) external onlyMiner returns (uint256) {
-    uint256 tokens = _amount;
     apToken.mint(_recipient, _amount);
-    emit Swap(_recipient, _amount, tokens);
-    return tokens;
+    emit Mint(_recipient, _amount);
+    return _amount;
   }
 }
