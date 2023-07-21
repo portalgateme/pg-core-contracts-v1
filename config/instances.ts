@@ -7,12 +7,12 @@ export default {
     // goerli config
     {
       // address of the token
-      token: '0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557',
+      token: '0xbB0E2855Ac05d26Bd9E567B8b50c98EF2b889Ad2',
       // address of kyced token
-      kycToken: '0xE86150332225b3674f7fa851d0E1C71FA8F7df12',
+      kycToken: '0xc8079E6AA1d7785dC57AfC178211314164B5B138',
       // denomination of the token
       // (make sure to check decimals of the token)
-      denomination: BigNumber.from(100000000),
+      denomination: BigNumber.from(100000).pow(6),
       // state of the instance
       // * 0 - instance disabled,
       // * 1 - instance enabled,
@@ -24,14 +24,14 @@ export default {
       protocolFeePercentage: 0,
       // max deposit amount
       // (make sure to check decimals of the token)
-      maxDepositAmount: BigNumber.from(100000000),
+      maxDepositAmount: BigNumber.from(1000000000).pow(6),
       // name of the instance
       // used by deploy script
       // ** and SHOULD BE UNIQUE **
-      name: `USDC-100000`,
+      name: `kycUSDC-100000`,
       // name of the currency
       // (token symbol)
-      currencyName: 'USDC',
+      currencyName: 'kycUSDC',
       // height of the merkle tree
       // * 20 - 2^20 leaves
       markleTreeHeight: 20,
@@ -42,6 +42,7 @@ export default {
       miningRate: ethers.BigNumber.from(100).pow(18),
       // is token ERC20
       isERC20: true,
+      // poolAddress: '0xe6419fE674Dc53BB6cC19460A6f229b72db9Ac40',
     },
   ],
 } as InstanceConfig

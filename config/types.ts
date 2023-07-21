@@ -17,6 +17,7 @@ export interface BaseInstanceConfigItem {
   currencyName: string
   miningRate: BigNumber | null
   isERC20: boolean
+  poolAddress?: Address
 }
 
 export interface InstanceConfig {

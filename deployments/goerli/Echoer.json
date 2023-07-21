@@ -1,0 +1,73 @@
+{
+  "address": "0x1ba6b345C95D999D4c7877CC1723E9300358644D",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "who",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "Echo",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_data",
+          "type": "bytes"
+        }
+      ],
+      "name": "echo",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x81719ce0baa5285d8e991e593c31348eb5fa1c0182f6f7b5a828360b40d3acb0",
+  "receipt": {
+    "to": null,
+    "from": "0xE356854c04927202C0188830424283ef1e34BAb0",
+    "contractAddress": "0x1ba6b345C95D999D4c7877CC1723E9300358644D",
+    "transactionIndex": 52,
+    "gasUsed": "129957",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xbced82b71219cd7696d15bb07400748fb496b5b66115f00215e83157abc510ba",
+    "transactionHash": "0x81719ce0baa5285d8e991e593c31348eb5fa1c0182f6f7b5a828360b40d3acb0",
+    "logs": [],
+    "blockNumber": 9364699,
+    "cumulativeGasUsed": "5368601",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "60a8e1e0e40ed20efad91540969758ae",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.19+commit.7dd6d404\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"who\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"Echo\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"echo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/tornado-core/Echoer.sol\":\"Echoer\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/tornado-core/Echoer.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity ^0.8.0;\\n\\ncontract Echoer {\\n  event Echo(address indexed who, bytes data);\\n\\n  function echo(bytes calldata _data) external {\\n    emit Echo(msg.sender, _data);\\n  }\\n}\\n\",\"keccak256\":\"0x222724bf3f99cc8714b457f790fa12618fcc9ffaeb6ea25f7b9fd89bf4b22f1f\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610163806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063624fbfdc14610030575b600080fd5b61004361003e36600461008c565b610045565b005b336001600160a01b03167f50d6f3fc915efd1695d8a4cb50da185984f50d256834b9cb308295eb3c872c9c83836040516100809291906100fe565b60405180910390a25050565b6000806020838503121561009f57600080fd5b823567ffffffffffffffff808211156100b757600080fd5b818501915085601f8301126100cb57600080fd5b8135818111156100da57600080fd5b8660208285010111156100ec57600080fd5b60209290920196919550909350505050565b60208152816020820152818360408301376000818301604090810191909152601f909201601f1916010191905056fea26469706673582212205f392aeebf78ffbc101d5fa26f9e33f77d7d1bd3c72e1d5c33408c83d6277e4364736f6c63430008130033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c8063624fbfdc14610030575b600080fd5b61004361003e36600461008c565b610045565b005b336001600160a01b03167f50d6f3fc915efd1695d8a4cb50da185984f50d256834b9cb308295eb3c872c9c83836040516100809291906100fe565b60405180910390a25050565b6000806020838503121561009f57600080fd5b823567ffffffffffffffff808211156100b757600080fd5b818501915085601f8301126100cb57600080fd5b8135818111156100da57600080fd5b8660208285010111156100ec57600080fd5b60209290920196919550909350505050565b60208152816020820152818360408301376000818301604090810191909152601f909201601f1916010191905056fea26469706673582212205f392aeebf78ffbc101d5fa26f9e33f77d7d1bd3c72e1d5c33408c83d6277e4364736f6c63430008130033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}

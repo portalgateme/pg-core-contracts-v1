@@ -8,7 +8,7 @@ const deployPGRouter: DeployFunction = async ({
   deployments,
   getNamedAccounts,
 }: HardhatRuntimeEnvironment) => {
-  const { deploy, execute } = deployments
+  const { deploy, execute, read } = deployments
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
@@ -23,9 +23,15 @@ const deployPGRouter: DeployFunction = async ({
     ...baseDeployOptions(chainId),
   })
 
-  await execute('InstanceRegistry', { from: deployer, log: true }, 'setPGRouter', pgRouter.address)
+  const existingPGRouter = await read('InstanceRegistry', 'router')
+
+  if (existingPGRouter != pgRouter.address) {
+    await execute('InstanceRegistry', { from: deployer, log: true }, 'setPGRouter', pgRouter.address)
+  } else {
+    console.log('PGRouter is already set')
+  }
 }
 
 export default deployPGRouter
 
-deployPGRouter.tags = [DeployTags.TEST, DeployTags.STAGE, DeployTags.RelayerAggregator]
+deployPGRouter.tags = [DeployTags.TEST, DeployTags.STAGE, DeployTags.PGRouter]

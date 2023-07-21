@@ -54,7 +54,7 @@ contract PGRouter is Initializable {
     @notice Deposit funds into the contract.
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
-  function deposit(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) public payable virtual {
+  function deposit(ITornadoInstance _tornado, bytes32 _commitment, bytes memory _encryptedNote) public payable virtual {
     (
       bool isERC20,
       IERC20 token,
@@ -70,6 +70,7 @@ contract PGRouter is Initializable {
       token.safeTransferFrom(msg.sender, address(this), _tornado.denomination());
     }
     _tornado.deposit{ value: msg.value }(_commitment);
+
 
     if (state == InstanceRegistry.InstanceState.MINABLE) {
       tornadoTrees.registerDeposit(address(_tornado), _commitment);

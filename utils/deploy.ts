@@ -23,6 +23,7 @@ export function sleep(ms: number) {
 export enum DeployTags {
   TEST = 'test',
   STAGE = 'stage',
+
   RelayerRegistry = 'relayer-registry',
   RelayerAggregator = 'relayer-aggregator',
   PGRouter = 'pg-router',
@@ -32,12 +33,15 @@ export enum DeployTags {
   IntermediaryVault = 'intermediary-vault',
   RewardSwap = 'reward-swap',
   APToken = 'ap-token',
+  Echoer = 'echoer',
+  TornadoTrees = 'tornado-trees',
+  Miner = 'miner',
+
+  Hashers = 'hashers',
+  KycTokens = 'kyc-tokens',
 
   MockERC20 = 'mock-erc20',
   KeyringDependency = 'keyring-dependency',
-  KycTokens = 'kyc-tokens',
-  TornadoTrees = 'tornado-trees',
-  Miner = 'miner',
-  Hashers = 'hashers',
+
   SetupInstances = 'setup-instances',
 }

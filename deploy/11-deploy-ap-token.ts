@@ -9,7 +9,7 @@ const deployAPToken: DeployFunction = async ({
   deployments,
   getNamedAccounts,
 }: HardhatRuntimeEnvironment) => {
-  const { deploy, execute } = deployments
+  const { deploy, execute, read } = deployments
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
@@ -23,7 +23,13 @@ const deployAPToken: DeployFunction = async ({
     ...baseDeployOpts,
   })
 
-  await execute('RewardSwap', { from: deployer, log: true }, 'setAPToken', pgap.address)
+  const existingAPToken = await read('RewardSwap', 'apToken')
+
+  if (existingAPToken != pgap.address) {
+    await execute('RewardSwap', { from: deployer, log: true }, 'setAPToken', pgap.address)
+  } else {
+    console.log('APToken is already set')
+  }
 }
 
 export default deployAPToken

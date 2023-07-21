@@ -9,7 +9,7 @@ import { generateTree } from '../utils/merkleTree'
 import instancesConfig from '../config/instances'
 
 const deployMiner: DeployFunction = async ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) => {
-  const { deploy, execute } = deployments
+  const { deploy, execute, read } = deployments
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
@@ -92,15 +92,21 @@ const deployMiner: DeployFunction = async ({ deployments, getNamedAccounts }: Ha
     ...baseDeployOpts,
   })
 
-  await execute(
-    'RewardSwap',
-    {
-      from: deployer,
-      log: true,
-    },
-    'setMiner',
-    miner.address,
-  )
+  const existingMiner = await read('RewardSwap', 'miner')
+
+  if (existingMiner !== miner.address) {
+    await execute(
+      'RewardSwap',
+      {
+        from: deployer,
+        log: true,
+      },
+      'setMiner',
+      miner.address,
+    )
+  } else {
+    console.log('Miner is already set')
+  }
 }
 
 export default deployMiner

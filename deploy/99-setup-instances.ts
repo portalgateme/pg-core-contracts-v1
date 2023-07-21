@@ -43,10 +43,10 @@ const setupInstances: DeployFunction = async ({
     const _instances = instancesConfig[chainId.toString()]
 
     for await (const instance of _instances) {
-      const deployedInstance = await deployments.get(instance.name)
+      const deployedPoolAddress = instance.poolAddress || (await deployments.get(instance.name)).address
 
       instances.push({
-        addr: deployedInstance.address,
+        addr: deployedPoolAddress,
         instance: {
           isERC20: true,
           state: instance.state,

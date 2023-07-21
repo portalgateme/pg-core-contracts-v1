@@ -7,7 +7,7 @@ const deployPGRouter: DeployFunction = async ({
   deployments,
   getNamedAccounts,
 }: HardhatRuntimeEnvironment) => {
-  const { deploy, execute } = deployments
+  const { deploy, execute, read } = deployments
   const { deployer } = await getNamedAccounts()
   const chainId = network.config.chainId!
 
@@ -25,7 +25,13 @@ const deployPGRouter: DeployFunction = async ({
     ...baseDeployOpts,
   })
 
-  await execute('PGRouter', { from: deployer, log: true }, 'setTornadoTreesContract', tornadoTrees.address)
+  const existingTornadoTrees = await read('PGRouter', 'tornadoTrees')
+
+  if (existingTornadoTrees != tornadoTrees.address) {
+    await execute('PGRouter', { from: deployer, log: true }, 'setTornadoTreesContract', tornadoTrees.address)
+  } else {
+    console.log('TornadoTrees is already set')
+  }
 }
 
 export default deployPGRouter
