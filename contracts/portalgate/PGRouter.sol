@@ -140,7 +140,7 @@ contract PGRouter is Initializable {
     }
   }
 
-  function setTornadoTreesContract(ITornadoTrees _tornadoTrees) external {
+  function setTornadoTreesContract(ITornadoTrees _tornadoTrees) external virtual onlyGovernance  {
     tornadoTrees = _tornadoTrees;
     emit TornadoTreesUpdated(_tornadoTrees);
   }
