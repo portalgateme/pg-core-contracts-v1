@@ -42,7 +42,7 @@ contract Zapper is Ownable {
       kycEth.approve(address(pgRouter), _tornado.denomination());
     }
 
-    pgRouter.deposit(_tornado, _commitment, _encryptedNote);
+    pgRouter.deposit(_tornado, _commitment, _encryptedNote, msg.sender);
   }
 
   /**
@@ -61,7 +61,7 @@ contract Zapper is Ownable {
 
     kycErc20.depositFor(address(this), _tornado.denomination());
     kycErc20.approve(address(pgRouter), _tornado.denomination());
-    pgRouter.deposit(_tornado, _commitment, _encryptedNote);
+    pgRouter.deposit(_tornado, _commitment, _encryptedNote, msg.sender);
   }
 
   function updatePgRouter(address _newPgRouter) external onlyOwner {

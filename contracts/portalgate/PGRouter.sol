@@ -33,12 +33,12 @@ contract PGRouter is Initializable {
     _;
   }
 
-  // constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
-  //   tornadoTrees = ITornadoTrees(_tornadoTrees);
-  //   governance = _governance;
-  //   instanceRegistry = InstanceRegistry(_instanceRegistry);
-  //   relayerRegistry = RelayerRegistry(_relayerRegistry);
-  // }
+   constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
+     tornadoTrees = ITornadoTrees(_tornadoTrees);
+     governance = _governance;
+     instanceRegistry = InstanceRegistry(_instanceRegistry);
+     relayerRegistry = RelayerRegistry(_relayerRegistry);
+   }
 
   /**
     @notice For proxy pattern
@@ -52,9 +52,12 @@ contract PGRouter is Initializable {
 
   /**
     @notice Deposit funds into the contract.
+    @param _tornado PortralGate pool instance address
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
+    @param _encryptedNote the encrypted note
+    @param sender the sender address (used in cases when the sender is not the caller e.g. zapper contract)
   */
-  function deposit(ITornadoInstance _tornado, bytes32 _commitment, bytes memory _encryptedNote) public payable virtual {
+  function deposit(ITornadoInstance _tornado, bytes32 _commitment, bytes memory _encryptedNote, address sender) public payable virtual {
     (
       bool isERC20,
       IERC20 token,
@@ -76,7 +79,10 @@ contract PGRouter is Initializable {
       tornadoTrees.registerDeposit(address(_tornado), _commitment);
     }
 
-    emit EncryptedNote(msg.sender, _encryptedNote);
+    emit EncryptedNote(
+      sender,
+      _encryptedNote
+    );
   }
 
   /**
