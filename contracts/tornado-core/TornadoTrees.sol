@@ -52,49 +52,6 @@ contract TornadoTrees is ITornadoTrees {
     emit WithdrawalData(_instance, _nullifier, blockNumber(), uint256(index));
   }
 
-//  function updateRoots(TreeLeaf[] calldata _deposits, TreeLeaf[] calldata _withdrawals) external {
-//    if (_deposits.length > 0) updateDepositTree(_deposits);
-//    if (_withdrawals.length > 0) updateWithdrawalTree(_withdrawals);
-//  }
-//
-//  function updateDepositTree(TreeLeaf[] calldata _deposits) public {
-//    bytes32[] memory leaves = new bytes32[](_deposits.length);
-//    uint256 offset = lastProcessedDepositLeaf;
-//
-//    for (uint256 i = 0; i < _deposits.length; i++) {
-//      TreeLeaf memory deposit = _deposits[i];
-//      bytes32 leafHash = keccak256(abi.encode(deposit.instance, deposit.hash, deposit.block));
-//      require(deposits[offset + i] == leafHash, "Incorrect deposit");
-//
-//      leaves[i] = hasher.poseidon([bytes32(uint256(uint160(deposit.instance))), deposit.hash, bytes32(deposit.block)]);
-//      delete deposits[offset + i];
-//
-//      emit DepositData(deposit.instance, deposit.hash, deposit.block, offset + i);
-//    }
-//
-//    lastProcessedDepositLeaf = offset + _deposits.length;
-//    depositTree.bulkInsert(leaves);
-//  }
-//
-//  function updateWithdrawalTree(TreeLeaf[] calldata _withdrawals) public {
-//    bytes32[] memory leaves = new bytes32[](_withdrawals.length);
-//    uint256 offset = lastProcessedWithdrawalLeaf;
-//
-//    for (uint256 i = 0; i < _withdrawals.length; i++) {
-//      TreeLeaf memory withdrawal = _withdrawals[i];
-//      bytes32 leafHash = keccak256(abi.encode(withdrawal.instance, withdrawal.hash, withdrawal.block));
-//      require(withdrawals[offset + i] == leafHash, "Incorrect withdrawal");
-//
-//      leaves[i] = hasher.poseidon([bytes32(uint256(uint160(withdrawal.instance))), withdrawal.hash, bytes32(withdrawal.block)]);
-//      delete withdrawals[offset + i];
-//
-//      emit WithdrawalData(withdrawal.instance, withdrawal.hash, withdrawal.block, offset + i);
-//    }
-//
-//    lastProcessedWithdrawalLeaf = offset + _withdrawals.length;
-//    withdrawalTree.bulkInsert(leaves);
-//  }
-
   function validateRoots(bytes32 _depositRoot, bytes32 _withdrawalRoot) public view {
     require(depositTree.isKnownRoot(_depositRoot), "Incorrect deposit tree root");
     require(withdrawalTree.isKnownRoot(_withdrawalRoot), "Incorrect withdrawal tree root");
