@@ -13,11 +13,11 @@ contract MockUserPolicies {
     _isWhitelisted = value;
   }
 
-  function userPolicies(address user) public view returns (uint32) {
+  function userPolicies() public view returns (uint32) {
     return _userPolicyId;
   }
 
-  function isWhitelisted(address owner, address who) public view returns (bool) {
+  function isWhitelisted() public view returns (bool) {
     return _isWhitelisted;
   }
 }

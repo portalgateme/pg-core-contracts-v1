@@ -38,27 +38,27 @@ contract MockPolicyManager {
     _walletChecks = value;
   }
 
-  function isPolicy(uint32 policyId) public view returns (bool) {
+  function isPolicy() public view returns (bool) {
     return _isPolicy;
   }
 
-  function policyRuleId(uint32 policyId) public view returns (bytes32) {
+  function policyRuleId() public view returns (bytes32) {
     return _policyRuleId;
   }
 
-  function policyTtl(uint32 policyId) public view returns (uint256) {
+  function policyTtl() public view returns (uint256) {
     return _policyTtl;
   }
 
-  function policyAllowUserWhitelists(uint32 policyId) public view returns (bool) {
+  function policyAllowUserWhitelists() public view returns (bool) {
     return _policyAllowUserWhitelists;
   }
 
-  function policyWalletChecks(uint32 policyId) public view returns (address[] memory) {
+  function policyWalletChecks() public view returns (address[] memory) {
     return _walletChecks;
   }
 
-  function hasRole(bytes32 role, address account) public view returns (bool) {
+  function hasRole() public view returns (bool) {
     return _hasRole;
   }
 

@@ -8,7 +8,7 @@ contract MockKeyringCredentials {
     _credentialTimestamp = timestamp;
   }
 
-  function getCredential(uint8 version, address user, uint32 policyId)
+  function getCredential()
   public
   view
   returns (uint256 timestamp)

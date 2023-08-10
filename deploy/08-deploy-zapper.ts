@@ -15,7 +15,7 @@ const deployZapper: DeployFunction = async ({ deployments, getNamedAccounts }: H
 
   await deploy('Zapper', {
     from: deployer,
-    args: [pgRouter.address, instanceRegistry.address],
+    args: [pgRouter.address, instanceRegistry.address, deployer],
     ...baseDeployOptions(chainId),
   })
 }

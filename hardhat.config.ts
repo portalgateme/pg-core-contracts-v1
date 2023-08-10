@@ -22,7 +22,7 @@ function privateKey() {
   return process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
 }
 
-const SOL_COMPILER_VERSIONS = ['0.6.11', '0.6.12', '0.7.6', '0.8.6', '0.8.7', '0.8.14', '0.8.19']
+const SOL_COMPILER_VERSIONS = ['0.6.11', '0.6.12', '0.7.6', '0.8.6', '0.8.7', '0.8.14']
 
 const config: HardhatUserConfig = {
   networks: {

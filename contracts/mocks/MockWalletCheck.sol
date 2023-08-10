@@ -8,7 +8,7 @@ contract MockWalletCheck {
     _birthday = value;
   }
 
-  function birthday(address wallet) public view returns (uint256) {
+  function birthday() public view returns (uint256) {
     return _birthday;
   }
 }

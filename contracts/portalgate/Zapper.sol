@@ -15,6 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Zapper {
   using SafeERC20 for IERC20;
+  using SafeERC20 for KycERC20;
 
   PGRouter public pgRouter;
   InstanceRegistry public instanceRegistry;
@@ -37,7 +38,7 @@ contract Zapper {
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
   function zapInEth(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) external payable {
-    (, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
+    (bool isERC20, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
     require(isERC20, "Token is not ERC20.");
 
     address _kycEth = address(token);
@@ -65,7 +66,7 @@ contract Zapper {
     KycERC20 kycErc20 = KycERC20(_kycErc20);
     IERC20 erc20 = kycErc20.underlying();
     erc20.safeTransferFrom(msg.sender, address(this), _tornado.denomination());
-    erc20.approve(_kycErc20, _tornado.denomination());
+    erc20.safeApprove(_kycErc20, _tornado.denomination());
 
     kycErc20.depositFor(address(this), _tornado.denomination());
     kycErc20.safeApprove(address(pgRouter), _tornado.denomination());
