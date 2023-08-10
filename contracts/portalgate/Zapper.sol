@@ -10,19 +10,25 @@ import "./InstanceRegistry.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Zapper is Ownable {
+contract Zapper {
   using SafeERC20 for IERC20;
 
   PGRouter public pgRouter;
   InstanceRegistry public instanceRegistry;
+  address public governance;
 
-  constructor(address _pgRouter, address _instanceRegistry) {
+  modifier onlyGovernance() {
+    require(msg.sender == governance, "Not authorized");
+    _;
+  }
+
+  constructor(address _pgRouter, address _instanceRegistry, address _governance) {
     pgRouter = PGRouter(_pgRouter);
     instanceRegistry = InstanceRegistry(_instanceRegistry);
+    governance = _governance;
   }
 
   /**
@@ -32,6 +38,7 @@ contract Zapper is Ownable {
   */
   function zapInEth(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) external payable {
     (, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
+    require(isERC20, "Token is not ERC20.");
 
     address _kycEth = address(token);
     KycETH kycEth = KycETH(_kycEth);
@@ -51,7 +58,8 @@ contract Zapper is Ownable {
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
   function zapIn(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) external {
-    (, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
+    (bool isERC20, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
+    require(isERC20, "Token is not ERC20.");
 
     address _kycErc20 = address(token);
     KycERC20 kycErc20 = KycERC20(_kycErc20);
@@ -60,15 +68,23 @@ contract Zapper is Ownable {
     erc20.approve(_kycErc20, _tornado.denomination());
 
     kycErc20.depositFor(address(this), _tornado.denomination());
-    kycErc20.approve(address(pgRouter), _tornado.denomination());
+    kycErc20.safeApprove(address(pgRouter), _tornado.denomination());
     pgRouter.deposit(_tornado, _commitment, _encryptedNote, msg.sender);
   }
 
-  function updatePgRouter(address _newPgRouter) external onlyOwner {
+  function updatePgRouter(address _newPgRouter) external onlyGovernance {
     pgRouter = PGRouter(_newPgRouter);
   }
 
-  function updateInstanceRegistry(address _newinstanceRegistry) external onlyOwner {
+  function updateInstanceRegistry(address _newinstanceRegistry) external onlyGovernance {
     instanceRegistry = InstanceRegistry(_newinstanceRegistry);
+  }
+
+  /**
+    * @notice Set new governance address.
+    * @param _govAddr new governance address
+    */
+  function setNewGovernance(address _govAddr) external onlyGovernance  {
+    governance = _govAddr;
   }
 }

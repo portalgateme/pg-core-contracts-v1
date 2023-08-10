@@ -33,17 +33,22 @@ contract PGRouter is Initializable {
     _;
   }
 
-   constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
-     tornadoTrees = ITornadoTrees(_tornadoTrees);
-     governance = _governance;
-     instanceRegistry = InstanceRegistry(_instanceRegistry);
-     relayerRegistry = RelayerRegistry(_relayerRegistry);
-   }
+  constructor(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) {
+    tornadoTrees = ITornadoTrees(_tornadoTrees);
+    governance = _governance;
+    instanceRegistry = InstanceRegistry(_instanceRegistry);
+    relayerRegistry = RelayerRegistry(_relayerRegistry);
+  }
 
   /**
     @notice For proxy pattern
   */
-  function initialize(address _tornadoTrees, address _governance, address _instanceRegistry, address _relayerRegistry) public initializer {
+  function initialize(
+    address _tornadoTrees,
+    address _governance,
+    address _instanceRegistry,
+    address _relayerRegistry
+  ) public initializer {
     tornadoTrees = ITornadoTrees(_tornadoTrees);
     governance = _governance;
     instanceRegistry = InstanceRegistry(_instanceRegistry);
@@ -57,15 +62,15 @@ contract PGRouter is Initializable {
     @param _encryptedNote the encrypted note
     @param sender the sender address (used in cases when the sender is not the caller e.g. zapper contract)
   */
-  function deposit(ITornadoInstance _tornado, bytes32 _commitment, bytes memory _encryptedNote, address sender) public payable virtual {
-    (
-      bool isERC20,
-      IERC20 token,
-      InstanceRegistry.InstanceState state,
-      ,
-      ,
-      uint256 maxDepositAmount
-    ) = instanceRegistry.instances(_tornado);
+  function deposit(
+    ITornadoInstance _tornado,
+    bytes32 _commitment,
+    bytes memory _encryptedNote,
+    address sender
+  ) public payable virtual {
+    (bool isERC20, IERC20 token, InstanceRegistry.InstanceState state, , , uint256 maxDepositAmount) = instanceRegistry.instances(
+      _tornado
+    );
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
     require(token.balanceOf(address(_tornado)) < maxDepositAmount, "Exceed deposit Cap for the pool");
 
@@ -74,15 +79,11 @@ contract PGRouter is Initializable {
     }
     _tornado.deposit{ value: msg.value }(_commitment);
 
-
     if (state == InstanceRegistry.InstanceState.MINABLE) {
       tornadoTrees.registerDeposit(address(_tornado), _commitment);
     }
 
-    emit EncryptedNote(
-      sender,
-      _encryptedNote
-    );
+    emit EncryptedNote(sender, _encryptedNote);
   }
 
   /**
@@ -106,23 +107,14 @@ contract PGRouter is Initializable {
     uint256 _fee,
     uint256 _refund
   ) public payable virtual {
-    (
-      ,
-      ,
-      InstanceRegistry.InstanceState state,
-      ,
-      ,
-    ) = instanceRegistry.instances(_tornado);
+    (, , InstanceRegistry.InstanceState state, , , ) = instanceRegistry.instances(_tornado);
     require(state != InstanceRegistry.InstanceState.DISABLED, "The instance is not supported");
 
     if (_relayer != _recipient) {
-      require(
-        relayerRegistry.isRelayerRegistered(_relayer) && relayerRegistry.isRelayerRegistered(msg.sender) && msg.sender == _relayer,
-        "Invalid Relayer."
-      );
+      require(relayerRegistry.isRelayerRegistered(_relayer) && msg.sender == _relayer, "Invalid Relayer.");
     }
 
-    _tornado.withdraw{value:msg.value}(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
+    _tornado.withdraw{ value: msg.value }(_proof, _root, _nullifierHash, _recipient, _relayer, _fee, _refund);
 
     if (state == InstanceRegistry.InstanceState.MINABLE) {
       tornadoTrees.registerWithdrawal(address(_tornado), _nullifierHash);
@@ -149,7 +141,7 @@ contract PGRouter is Initializable {
     @dev Update new tornado tree instance.
     @param _tornadoTrees new tornado tree instance address
   */
-  function setTornadoTreesContract(ITornadoTrees _tornadoTrees) external virtual onlyGovernance  {
+  function setTornadoTreesContract(ITornadoTrees _tornadoTrees) external virtual onlyGovernance {
     tornadoTrees = _tornadoTrees;
     emit TornadoTreesUpdated(_tornadoTrees);
   }
@@ -158,7 +150,7 @@ contract PGRouter is Initializable {
     @notice Set new governance address.
     @param _govAddr new governance address
   */
-  function setNewGovernance(address _govAddr) external onlyGovernance  {
+  function setNewGovernance(address _govAddr) external onlyGovernance {
     governance = _govAddr;
   }
 
@@ -170,7 +162,8 @@ contract PGRouter is Initializable {
       // for Ether
       uint256 totalBalance = address(this).balance;
       uint256 balance = Math.min(totalBalance, _amount);
-      _to.transfer(balance);
+      (bool sent, ) = _to.call{ value: balance }("");
+      require(sent, "Failed to send Ether");
     } else {
       // any other erc20
       uint256 totalBalance = _token.balanceOf(address(this));
