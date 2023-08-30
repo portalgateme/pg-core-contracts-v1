@@ -104,7 +104,7 @@ contract ExemptionsManager is IExemptionsManager, KeyringAccessControl, Initiali
         override
         onlyExemptionsAdmin
     {
-        // null address is allowed to be except
+        // null address is allowed to be exempt
         _updateGlobalExemption(exemptAddress, description);  
         emit UpdateGlobalExemption(_msgSender(), exemptAddress, description);
     }

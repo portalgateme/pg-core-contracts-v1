@@ -173,7 +173,7 @@ contract KeyringZkCredentialUpdater is
             rootTime);
     }
 
-  /**
+    /**
      * @notice The identity tree must be a policy attestor and the policy rule cannot be toxic.
      * @dev Use static call to inspect response.
      * @param policyId The policy to inspect.

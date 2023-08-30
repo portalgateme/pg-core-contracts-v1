@@ -16,7 +16,7 @@ import "../consent/Consent.sol";
  * a simplified modifier for use in derived contracts.
  */
 
-abstract contract KeyringGuard is IKeyringGuard, Consent {
+contract KeyringGuard is IKeyringGuard, Consent {
     using AddressSet for AddressSet.Set;
 
     uint8 private constant VERSION = 1;
@@ -130,7 +130,7 @@ abstract contract KeyringGuard is IKeyringGuard, Consent {
      *  - they have a cached credential and if required, a wallet check 
      *  - they are an approved counterparty of the other party
      *  - they can rely on degraded service mitigation, and their counterparty consents
-     *  - the policy excepts them from compliance checks, usually reserved for contracts
+     *  - the policy exempts them from compliance checks, usually reserved for contracts
      */
     function isAuthorized(address from, address to) public override returns (bool passed) {
         
@@ -150,23 +150,24 @@ abstract contract KeyringGuard is IKeyringGuard, Consent {
             to
         );
 
+        // If both parties are exempt, allow the trade. 
+        
+        if(fromExempt && toExempt) return true;
+
         // If the policy is disabled and both parties consent, allow all trades.
         // If the policy is disabled and one or more parties does not consent, block trade. 
        
         if(IPolicyManager(policyManager).policyDisabled(admissionPolicyId)) {
             if (
-                userConsentDeadlines[from] > block.timestamp || fromExempt &&
-                userConsentDeadlines[to] > block.timestamp || toExempt) 
+                (userConsentDeadlines[from] > block.timestamp || fromExempt) &&
+                (userConsentDeadlines[to] > block.timestamp || toExempt)
+            ) 
             {
                 return true;
             } else {
                 return false;
             }
         }
-
-        // If both parties are exempt, allow the trade. 
-        
-        if(fromExempt && toExempt) return true;
 
         // A party is compliant if the counterparty approves interactions with them.
 
