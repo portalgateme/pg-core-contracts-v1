@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.19;
 
 import "../interfaces/ENSRegistry.sol";
 import "../interfaces/ENSResolver.sol";
@@ -19,9 +19,10 @@ contract RelayerAggregator {
   }
 
   function relayersData(address[] memory _relayers) public view returns (Relayer[] memory) {
-    Relayer[] memory relayers = new Relayer[](_relayers.length);
+    uint256 _length = _relayers.length;
 
-    for (uint256 i = 0; i < _relayers.length; i++) {
+    Relayer[] memory relayers = new Relayer[](_length);
+    for (uint256 i = 0; i < _length; i++) {
       relayers[i].isRegistered = relayerRegistry.isRelayerRegistered(_relayers[i]);
       relayers[i].balance = 0;
     }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.14;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -31,7 +31,7 @@ contract InstanceRegistry {
     ITornadoInstance addr;
     Instance instance;
   }
-
+  uint256 public MAX_FEE = 30;
   address public governance;
   PGRouter public router;
 
@@ -40,6 +40,7 @@ contract InstanceRegistry {
 
   event InstanceStateUpdated(ITornadoInstance indexed instance, InstanceState state);
   event RouterRegistered(address pgRouter);
+  event NewGovernanceAddressUpdated(address newGovernanceAddress);
 
   modifier onlyGovernance() {
     require(msg.sender == governance, "Not authorized");
@@ -110,6 +111,10 @@ contract InstanceRegistry {
    * @param newFee the new fee to use
    * */
   function setProtocolFee(ITornadoInstance instance, uint32 newFee) external onlyGovernance {
+    require(address(instance) != address(0), "Empty Instance.");
+    require(address(instances[instance].token) != address(0), "Instance Token is Empty.");
+    require(newFee <= MAX_FEE, "NewFee exceed MaxFee.");
+
     instances[instance].protocolFeePercentage = newFee;
   }
 
@@ -153,7 +158,9 @@ contract InstanceRegistry {
    * @param _govAddr new governance address
    */
   function setNewGovernance(address _govAddr) external onlyGovernance {
+    require(_govAddr != address(0), "Empty governance address.");
     governance = _govAddr;
+    emit NewGovernanceAddressUpdated(_govAddr);
   }
 
   /**

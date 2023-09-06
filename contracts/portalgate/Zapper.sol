@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.14;
 
-import "../keyring/tokens/KycERC20.sol";
+import "./KycERC20.sol";
 import "./KycETH.sol";
 import "../interfaces/ITornadoInstance.sol";
 import "./PGRouter.sol";
@@ -16,6 +16,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract Zapper {
   using SafeERC20 for IERC20;
   using SafeERC20 for KycERC20;
+
+  event NewGovernanceAddressUpdated(address newGovernanceAddress);
 
   PGRouter public pgRouter;
   InstanceRegistry public instanceRegistry;
@@ -38,8 +40,8 @@ contract Zapper {
     @param _commitment the note commitment, which is PedersenHash(nullifier + secret)
   */
   function zapInEth(ITornadoInstance _tornado, bytes32 _commitment, bytes calldata _encryptedNote) external payable {
-    (bool isERC20, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
-    require(isERC20, "Token is not ERC20.");
+    (, IERC20 token, , , , ) = instanceRegistry.instances(_tornado);
+    require(address(token) != address(0), "Token is not configured.");
 
     address _kycEth = address(token);
     KycETH kycEth = KycETH(_kycEth);
@@ -47,7 +49,7 @@ contract Zapper {
 
     uint approveAmt = kycEth.allowance(address(this), address(pgRouter));
     if (approveAmt < _tornado.denomination()) {
-      kycEth.approve(address(pgRouter), _tornado.denomination());
+      IERC20(_kycEth).safeApprove(address(pgRouter), _tornado.denomination());
     }
 
     pgRouter.deposit(_tornado, _commitment, _encryptedNote, msg.sender);
@@ -82,10 +84,12 @@ contract Zapper {
   }
 
   /**
-    * @notice Set new governance address.
-    * @param _govAddr new governance address
-    */
-  function setNewGovernance(address _govAddr) external onlyGovernance  {
+    @notice Set new governance address.
+    @param _govAddr new governance address
+  */
+  function setNewGovernance(address _govAddr) external onlyGovernance {
+    require(_govAddr != address(0), "Empty governance address.");
     governance = _govAddr;
+    emit NewGovernanceAddressUpdated(_govAddr);
   }
 }

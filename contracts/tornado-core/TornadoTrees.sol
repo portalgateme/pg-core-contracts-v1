@@ -6,8 +6,6 @@ import "../libs/OwnableMerkleTree.sol";
 import "../interfaces/ITornadoTrees.sol";
 import "../interfaces/IHasher.sol";
 
-import "hardhat/console.sol";
-
 contract TornadoTrees is ITornadoTrees {
   OwnableMerkleTree public immutable depositTree;
   OwnableMerkleTree public immutable withdrawalTree;

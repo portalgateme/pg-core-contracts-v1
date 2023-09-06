@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -17,6 +17,7 @@ contract PGRouter is Initializable {
 
   event EncryptedNote(address indexed sender, bytes encryptedNote);
   event TornadoTreesUpdated(ITornadoTrees addr);
+  event NewGovernanceAddressUpdated(address newGovernanceAddress);
 
   address public governance;
   InstanceRegistry public instanceRegistry;
@@ -151,7 +152,9 @@ contract PGRouter is Initializable {
     @param _govAddr new governance address
   */
   function setNewGovernance(address _govAddr) external onlyGovernance {
+    require(_govAddr != address(0), "Empty governance address.");
     governance = _govAddr;
+    emit NewGovernanceAddressUpdated(_govAddr);
   }
 
   /// @dev Method to claim junk and accidentally sent tokens

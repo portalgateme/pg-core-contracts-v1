@@ -22,7 +22,7 @@ function privateKey() {
   return process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
 }
 
-const SOL_COMPILER_VERSIONS = ['0.6.11', '0.6.12', '0.7.6', '0.8.6', '0.8.7', '0.8.14']
+const SOL_COMPILER_VERSIONS = ['0.6.11', '0.6.12', '0.7.6', '0.8.6', '0.8.7', '0.8.14', '0.8.19']
 
 const config: HardhatUserConfig = {
   networks: {
@@ -42,7 +42,7 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: false,
     },
     goerli: {
-      url: `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
+      url: `https://chaotic-fittest-dew.ethereum-goerli.quiknode.pro/8ee65fa950c98ed30ec92ccd7d67639c13822af0/`,
       accounts: privateKey(),
       gasMultiplier: 1.2,
       chainId: 5,
@@ -55,7 +55,7 @@ const config: HardhatUserConfig = {
       },
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      url: `https://frequent-radial-valley.quiknode.pro/a7927e7f7fe9ee09b44a51c8407c0359462e6e52/`,
       accounts: privateKey(),
       chainId: 1,
       saveDeployments: true,
