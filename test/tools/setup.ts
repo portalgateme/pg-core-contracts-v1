@@ -16,7 +16,6 @@ import {
   PortalGateAnonymityPoints,
 } from '../../generated-types/ethers'
 import { setupUser, setupUsers } from './users'
-import { KycERC20, KycETH } from '../../generated-types/ethers/contracts/portalgate'
 import { Denomination } from '../../utils/instances'
 
 export const setup = deployments.createFixture(async () => {
@@ -34,6 +33,7 @@ export const setup = deployments.createFixture(async () => {
     Miner: (await ethers.getContract('Miner')) as Miner,
     TornadoTrees: (await ethers.getContract('TornadoTrees')) as MockTornadoTrees,
     PGAP: (await ethers.getContract('PortalGateAnonymityPoints')) as PortalGateAnonymityPoints,
+    ERC20Tornado100: (await ethers.getContract('ERC20Tornado-100')) as ERC20Tornado,
 
     Hasher2: (await ethers.getContract('Hasher2')) as any,
     Hasher3: (await ethers.getContract('Hasher3')) as any,

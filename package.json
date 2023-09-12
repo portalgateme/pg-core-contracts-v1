@@ -24,8 +24,9 @@
     "generate-types": "TYPECHAIN_FORCE=true npx hardhat typechain",
     "circuit:reward": "scripts/buildCircuit.sh Reward",
     "circuit:withdraw": "scripts/buildCircuit.sh Withdraw",
+    "circuit:withdrawAsset": "scripts/buildCircuit.sh WithdrawAsset",
     "circuit:treeUpdate": "scripts/buildCircuit.sh TreeUpdate",
-    "circuit": "mkdir -p build/circuits && yarn circuit:reward && yarn circuit:withdraw && yarn circuit:treeUpdate"
+    "circuit": "mkdir -p build/circuits && yarn circuit:reward && yarn circuit:withdraw && yarn circuit:treeUpdate && yarn circuit:withdrawAsset"
   },
   "author": "",
   "license": "ISC",
