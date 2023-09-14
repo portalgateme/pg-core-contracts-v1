@@ -49,37 +49,42 @@ const deployKycTokens: DeployFunction = async ({
     const erc20Instances = getUniqueByToken(instanceConfig[chainId.toString()].filter(isERC20Item), 'token')
     const ethInstances = instanceConfig[chainId.toString()].filter((item) => !isERC20Item(item))
 
-    // for await (const instance of erc20Instances) {
-    //   const keyringConfig: ERC20KeyringTokenConstructorConfig = {
-    //     ...baseKeyringConfig,
-    //     collateralToken: instance.token as Address,
-    //   }
+    for await (const instance of erc20Instances) {
+      const keyringConfig: ERC20KeyringTokenConstructorConfig = {
+        ...baseKeyringConfig,
+        collateralToken: instance.token as Address,
+      }
 
-    //   const deployed = await deploy(instance.currencyName + 'Kyc', {
-    //     contract: 'contracts/portalgate/KycERC20.sol:KycERC20',
-    //     from: deployer,
-    //     args: [
-    //       keyringConfig,
-    //       policyId,
-    //       MAXIMUM_CONSENT_PERIOD,
-    //       instance.currencyName + 'Kyc',
-    //       instance.currencyName + 'Kyc',
-    //     ],
-    //     ...baseDeployOpts,
-    //   })
+      const deployed = await deploy(instance.currencyName, {
+        contract: 'contracts/portalgate/KycERC20.sol:KycERC20',
+        from: deployer,
+        args: [
+          keyringConfig,
+          policyId,
+          MAXIMUM_CONSENT_PERIOD,
+          instance.currencyName,
+          instance.currencyName,
+        ],
+        ...baseDeployOpts,
+      })
 
-    //   console.log('Deployed KycERC20 for', instance.currencyName)
-    //   console.log(
-    //     `Please, paste the following line into config/instances.ts where token is ${instance.token}: `,
-    //   )
-    //   console.log(`kycToken: "${deployed.address}"`)
-    // }
+      console.log('Deployed KycERC20 for', instance.currencyName)
+      console.log(
+        `Please, paste the following line into config/instances.ts where token is ${instance.token}: `,
+      )
+      console.log(`kycToken: "${deployed.address}"`)
+    }
 
     for await (const instance of ethInstances) {
-      const deployed = await deploy(instance.name + 'Kyc', {
+      const keyringConfig: ERC20KeyringTokenConstructorConfig = {
+        ...baseKeyringConfig,
+        collateralToken: '0x0000000000000000000000000000000000000000',
+      }
+
+      const deployed = await deploy(instance.currencyName, {
         contract: 'contracts/portalgate/KycETH.sol:KycETH',
         from: deployer,
-        args: [baseKeyringConfig, policyId, MAXIMUM_CONSENT_PERIOD],
+        args: [keyringConfig, policyId, MAXIMUM_CONSENT_PERIOD],
         ...baseDeployOpts,
       })
 
