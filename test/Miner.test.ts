@@ -124,7 +124,7 @@ async function pre({ deployer, instances }: Pick<PreFunctionParameter, 'deployer
   }
 }
 
-describe.only('Miner', function () {
+describe('Miner', function () {
   describe('Deployment', function () {
     it('Should deploy Miner', async function () {
       const { deployer } = await setup()
@@ -171,7 +171,7 @@ describe.only('Miner', function () {
   })
 
   describe('reward', function () {
-    it.only('should reward', async function () {
+    it('should reward', async function () {
       const { deployer, instances } = await setup()
 
       const { note, controller } = await pre({ deployer, instances })
