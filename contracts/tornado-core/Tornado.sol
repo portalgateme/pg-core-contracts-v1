@@ -16,7 +16,10 @@ import "./MerkleTreeWithHistory.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface IVerifier {
-    function verifyProof(bytes calldata proof, uint256[3] calldata input) external view returns (bool);
+    function verifyProof(
+        bytes memory _proof,
+        uint256[6] memory _input
+    ) external returns (bool);
 }
 
 abstract contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
@@ -38,13 +41,6 @@ abstract contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
         address indexed relayer,
         uint256 fee
     );
-
-    struct WithdrawAssetExtData {
-        address recipient;
-        address relayer;
-        uint256 fee;
-        uint256 refund;
-    }
 
     /**
 @dev The constructor
@@ -98,25 +94,13 @@ abstract contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
         uint256 _fee,
         uint256 _refund
     ) external payable nonReentrant {
-        WithdrawAssetExtData memory extData = WithdrawAssetExtData({
-            recipient: _recipient,
-            relayer: _relayer,
-            fee: _fee,
-            refund: _refund
-        });
-
-        bytes32 extDataHash = keccak248(abi.encode(extData));
-
         require(_fee <= denomination, "Fee exceeds transfer value");
         require(
             !nullifierHashes[_nullifierHash],
             "The note has been already spent"
         );
         require(isKnownRoot(_root), "Cannot find your merkle root"); // Make sure to use a recent one
-        require(
-            verifier.verifyProof(_proof, [uint256(_root), uint256(_nullifierHash), uint256(extDataHash)]),
-            "Invalid withdraw proof"
-        );
+        require(verifier.verifyProof(_proof, [uint256(_root), uint256(_nullifierHash), uint256(uint160(address(_recipient))), uint256(uint160(address(_relayer))), _fee, _refund]), "Invalid withdraw proof");
 
         nullifierHashes[_nullifierHash] = true;
         _processWithdraw(_recipient, _relayer, _fee, _refund);
@@ -146,9 +130,5 @@ abstract contract Tornado is MerkleTreeWithHistory, ReentrancyGuard {
                 spent[i] = true;
             }
         }
-    }
-
-    function keccak248(bytes memory _data) internal pure returns (bytes32) {
-        return keccak256(_data) & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }
 }

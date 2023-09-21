@@ -22,7 +22,7 @@ const deployTornadoInstance: DeployFunction = async ({
     ...baseDeployOpts,
   })
 
-  const hasher2 = await deployments.get('Hasher2')
+  const hasherMimc = await deployments.get('HasherMimc')
 
   if (isLocalNetwork(chainId)) {
     const mockERC20 = await deployments.get('InstanceMockERC20')
@@ -46,7 +46,7 @@ const deployTornadoInstance: DeployFunction = async ({
         from: deployer,
         args: [
           verifier.address,
-          hasher2.address,
+          hasherMimc.address,
           instance.denomination,
           instance.markleTreeHeight,
           instance.token,
@@ -60,7 +60,7 @@ const deployTornadoInstance: DeployFunction = async ({
       const contract = 'ERC20Tornado'
       const args = [
         verifier.address,
-        hasher2.address,
+        hasherMimc.address,
         instance.denomination,
         instance.markleTreeHeight,
         instance.kycToken,

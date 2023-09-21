@@ -11,12 +11,12 @@ import { deimpresonate, impresonate } from './helpers/impresonator'
 import { toBN } from 'web3-utils'
 
 const provingKeys = {
-  rewardCircuit: require('../build/circuits/Reward.json'),
-  withdrawCircuit: require('../build/circuits/Withdraw.json'),
-  treeUpdateCircuit: require('../build/circuits/TreeUpdate.json'),
-  rewardProvingKey: fs.readFileSync('./build/circuits/Reward_proving_key.bin').buffer,
-  withdrawProvingKey: fs.readFileSync('./build/circuits/Withdraw_proving_key.bin').buffer,
-  treeUpdateProvingKey: fs.readFileSync('./build/circuits/TreeUpdate_proving_key.bin').buffer,
+  rewardCircuit: require('../keys/ap/Reward.json'),
+  withdrawCircuit: require('../keys/ap/Withdraw.json'),
+  treeUpdateCircuit: require('../keys/ap/TreeUpdate.json'),
+  rewardProvingKey: fs.readFileSync('./keys/ap/Reward_proving_key.bin').buffer,
+  withdrawProvingKey: fs.readFileSync('./keys/ap/Withdraw_proving_key.bin').buffer,
+  treeUpdateProvingKey: fs.readFileSync('./keys/ap/TreeUpdate_proving_key.bin').buffer,
 }
 
 const firstHardhatAccountPrivateKey = 'ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'

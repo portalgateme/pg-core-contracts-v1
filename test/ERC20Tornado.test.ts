@@ -7,12 +7,12 @@ import buildGroth16 from 'websnark/src/groth16'
 
 import { setup } from './tools/setup'
 
-import { poseidonHash2, toFixedHex } from '../utils/utils'
-import { generateDepositArgs, getExtWithdrawAssetArgsHash } from '../utils/withdrawal/args'
+import { toFixedHex } from '../utils/utils'
+import { generateDepositArgs } from '../utils/withdrawal/args'
 
-import circuit from '../build/circuits/WithdrawAsset.json'
+import circuit from '../keys/mixer/withdraw.json'
 import { pedersenHash } from '../utils/withdrawal/utils'
-const proving_key = fs.readFileSync('build/circuits/WithdrawAsset_proving_key.bin').buffer
+const proving_key = fs.readFileSync('keys/mixer/Withdraw_proving_key.bin').buffer
 
 export const makeDeposit = async (commitment: string, deployer: any, amount: number = 100) => {
   await deployer['InstanceMockERC20'].mint(deployer.address, amount)
@@ -57,7 +57,6 @@ describe('ERC20Tornado', async function () {
       const { deployer, users } = await setup()
 
       const tree = new MarkleTree(20, [], {
-        hashFunction: poseidonHash2,
         zeroElement: '21663839004416932945382355908790599225266501822907911457504978515578255421292',
       })
 
@@ -72,18 +71,13 @@ describe('ERC20Tornado', async function () {
       const root = tree.root()
       const { pathElements, pathIndices } = tree.path(0)
 
-      const extData = {
+      const input = {
+        root,
+        nullifierHash: pedersenHash(depositArgs.nullifier.leInt2Buff(31)),
         refund: bigInt(0),
         relayer: user2.address,
         recipient: user2.address,
         fee: bigInt(0),
-      }
-      const extDataHash = getExtWithdrawAssetArgsHash(extData)
-
-      const input = {
-        root,
-        extDataHash,
-        nullifierHash: pedersenHash(depositArgs.nullifier.leInt2Buff(31)),
         pathIndices,
         pathElements,
         secret: depositArgs.secret,
@@ -102,10 +96,10 @@ describe('ERC20Tornado', async function () {
         proof,
         toFixedHex(input.root),
         toFixedHex(input.nullifierHash),
-        toFixedHex(extData.recipient, 20),
-        toFixedHex(extData.relayer, 20),
-        toFixedHex(extData.fee),
-        toFixedHex(extData.refund),
+        toFixedHex(input.recipient, 20),
+        toFixedHex(input.relayer, 20),
+        toFixedHex(input.fee),
+        toFixedHex(input.refund),
       )
 
       expect(await deployer['ERC20Tornado100'].isSpent(toFixedHex(input.nullifierHash))).to.be.equal(true)
