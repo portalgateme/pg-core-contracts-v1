@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../tornado-core/MerkleTreeWithHistory.sol";
+import "../tornado-core/MerkleTreeWithHistoryPoseidon.sol";
 
-contract OwnableMerkleTree is Ownable, MerkleTreeWithHistory {
-  constructor(uint32 _treeLevels, IHasher _hasher) MerkleTreeWithHistory(_treeLevels, _hasher) {}
+contract OwnableMerkleTree is Ownable, MerkleTreeWithHistoryPoseidon {
+  constructor(uint32 _treeLevels, IHasher _hasher) MerkleTreeWithHistoryPoseidon(_treeLevels, _hasher) {}
 
   function insert(bytes32 _leaf) external onlyOwner returns (uint32 index) {
     return _insert(_leaf);
