@@ -13,3 +13,6 @@ artifacts
 deployment.json
 deployments/localhost
 
+# keys files
+keys/*
+
