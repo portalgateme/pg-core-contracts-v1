@@ -42,7 +42,7 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: false,
     },
     goerli: {
-      url: `https://chaotic-fittest-dew.ethereum-goerli.quiknode.pro/8ee65fa950c98ed30ec92ccd7d67639c13822af0/`,
+      url: process.env.GOERLI_RPC_URL,
       accounts: privateKey(),
       gasMultiplier: 1.2,
       chainId: 5,
@@ -55,7 +55,7 @@ const config: HardhatUserConfig = {
       },
     },
     mainnet: {
-      url: `https://frequent-radial-valley.quiknode.pro/a7927e7f7fe9ee09b44a51c8407c0359462e6e52/`,
+      url: process.env.MAINNET_RPC_URL,
       accounts: privateKey(),
       chainId: 1,
       saveDeployments: true,

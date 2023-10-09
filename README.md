@@ -56,6 +56,7 @@ yarn compile
 
 ```bash
 yarn deploy-kyc:goerli
+yarn deploy-kyc:mainnet
 ```
 
 __Make sure to follow the output of the script and update all related configs. It is required to deploy all contracts correctly.__
@@ -64,6 +65,7 @@ __Make sure to follow the output of the script and update all related configs. I
 
 ```bash
 yarn deploy-core:goerli
+yarn deploy-core:mainnet
 ```
 
 _Contracts may have already been deployed on Goerli testnet. Normally, hardhat-deploy will check if contracts with same bytecode is already deployed and will not re-deploy contract but instead will reuse deployed one. If you want to have a fresh deploy, make sure to delete `deployments` folder._
@@ -72,12 +74,14 @@ _Contracts may have already been deployed on Goerli testnet. Normally, hardhat-d
 
 ```bash
 yarn setup-instances:goerli
+yarn setup-instances:mainnet
 ```
 
 5. Verify contracts
 
 ```bash
 yarn verify:goerli
+yarn verify:mainnet
 ```
 
 _This will verify contracts on Etherscan._
@@ -151,11 +155,11 @@ The schema is already defined in this file.
 The instance configuration object has the following properties:
 
 | Property name          | Optional         | Description                                                                                                                  | Example                                              |
-|------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
+| ---------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | token                  | false (nullable) | Address of the instance token. If null value is provided then considered that it is ETH instance                             | 0xbB0E2855Ac05d26Bd9E567B8b50c98EF2b889Ad2           |
 | kycToken               | true             | Address of the instance KYC token.                                                                                           | 0xc8079E6AA1d7785dC57AfC178211314164B5B138           |
 | denomination           | false            | Denomination of the token. (make sure to check decimals of the token)                                                        | 100000 ^ 6 (or BigNumber.from(100000).pow(6))        |
-| state                  | false            | State of the instance <br>0 - instance disabled <br>1 - instance enabled <br>2 - instance enabled and mining enabled         | 1                                                    |                                               |
+| state                  | false            | State of the instance <br>0 - instance disabled <br>1 - instance enabled <br>2 - instance enabled and mining enabled         | 1                                                    |  |
 | uniswapPoolSwappingFee | false            | Fee for swapping tokens in the Uniswap pool                                                                                  | 0                                                    |
 | protocolFeePercentage  | false            | Fee for the protocol                                                                                                         | 0                                                    |
 | maxDepositAmount       | false            | Max deposit amount. (make sure to check decimals of the token)                                                               | 1000000000 ^ 6 (or BigNumber.from(1000000000).pow(6) |

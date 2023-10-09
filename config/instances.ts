@@ -74,4 +74,91 @@ export default {
       isERC20: false,
     },
   ],
+  '1': [
+    // mainnet config
+    {
+      // address of the token usdc-50000
+      token: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      // address of kyced token
+      kycToken: '0x',
+      // denomination of the token
+      // (make sure to check decimals of the token)
+      denomination: BigNumber.from(50000).mul(BigNumber.from(10).pow(6)),
+      // state of the instance
+      // * 0 - instance disabled,
+      // * 1 - instance enabled,
+      // * 2 - instance enabled and mining enabled
+      state: 1,
+      // fee for swapping tokens in the pool
+      uniswapPoolSwappingFee: 0,
+      // fee for the protocol
+      protocolFeePercentage: 0,
+      // max deposit amount
+      // (make sure to check decimals of the token)
+      maxDepositAmount: BigNumber.from(1000000).mul(BigNumber.from(10).pow(6)),
+      // name of the instance
+      // used by deploy script
+      // ** and SHOULD BE UNIQUE **
+      name: `kycUSDC-50000`,
+      // name of the currency
+      // (token symbol)
+      currencyName: 'kycUSDC',
+      // height of the merkle tree
+      // * 20 - 2^20 leaves
+      markleTreeHeight: 20,
+      // mining rate
+      // (how many tokens will be mined per block)
+      // can be null in case if instance has not enabled mining
+      // in example below 100 tokens will be mined per block since token has 18 decimals
+      miningRate: BigNumber.from(10).mul(BigNumber.from(10).pow(18)),
+      // is token ERC20
+      isERC20: true,
+      // poolAddress: '0xe6419fE674Dc53BB6cC19460A6f229b72db9Ac40',
+    },
+    {
+      // address of the token usdt-1000
+      token: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      kycToken: '',
+      denomination: BigNumber.from(1000).mul(BigNumber.from(10).pow(6)),
+      state: 1,
+      uniswapPoolSwappingFee: 0,
+      protocolFeePercentage: 0,
+      maxDepositAmount: BigNumber.from(1000000).mul(BigNumber.from(10).pow(6)),
+      name: `kycUSDT-1000`,
+      currencyName: 'kycUSDT',
+      markleTreeHeight: 20,
+      miningRate: BigNumber.from(1).mul(BigNumber.from(10).pow(18)),
+      isERC20: true,
+    },
+    {
+      // address of the token usdt-50000
+      token: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      kycToken: '',
+      denomination: BigNumber.from(50000).mul(BigNumber.from(10).pow(6)),
+      state: 1,
+      uniswapPoolSwappingFee: 0,
+      protocolFeePercentage: 0,
+      maxDepositAmount: BigNumber.from(1000000).mul(BigNumber.from(10).pow(6)),
+      name: `kycUSDT-50000`,
+      currencyName: 'kycUSDT',
+      markleTreeHeight: 20,
+      miningRate: BigNumber.from(10).mul(BigNumber.from(10).pow(18)),
+      isERC20: true,
+    },
+    {
+      // address of the token
+      token: null,
+      kycToken: '',
+      denomination: BigNumber.from(10).mul(BigNumber.from(10).pow(18)),
+      state: 1,
+      uniswapPoolSwappingFee: 0,
+      protocolFeePercentage: 0,
+      maxDepositAmount: BigNumber.from(10000).mul(BigNumber.from(10).pow(18)),
+      name: 'kycETH-10',
+      currencyName: 'kycETH',
+      markleTreeHeight: 20,
+      miningRate: BigNumber.from(10).mul(BigNumber.from(10).pow(18)),
+      isERC20: false,
+    },
+  ],
 } as InstanceConfig
